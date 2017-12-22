@@ -2,7 +2,8 @@ from __future__ import print_function
 
 
 class OptimTemplate(object):
-    def __init__(self):
+    def __init__(self, obj, **kwargs):
+        from numpy import array
         self.MaxIteration = 100
         self.ErrorTolerance = 1e-6
         self.STEP = 0
@@ -12,6 +13,13 @@ class OptimTemplate(object):
         self.constraints = None
         self.iteration_message = None
         self.termination_message = None
+        self.objective = obj
+        if 'init' in kwargs:
+            self.x0 = array(kwargs['init'])
+        elif 'x0' in kwargs:
+            self.x0 = array(kwargs['x0'])
+        else:
+            self.x0 = None
 
     def iterate(self, **kwargs):
         self.STEP += 1
@@ -25,13 +33,13 @@ class OptimTemplate(object):
 
 
 class Base(object):
-    def __init__(self, **kwargs):
+    def __init__(self, obj, **kwargs):
         self.x0 = None
-        self.objective = lambda x: 0
+        self.objective = obj
         self.constraints = []
         self.Verbose = True
         _optimizer = kwargs.pop('method', OptimTemplate)
-        self.optimizer = _optimizer(**kwargs)
+        self.optimizer = _optimizer(obj, **kwargs)
 
     def __call__(self, *args, **kwargs):
         # Iterate:
