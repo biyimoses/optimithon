@@ -1,6 +1,6 @@
 from __future__ import print_function
 from numpy import array
-Infinitesimal = 1e-7
+Infinitesimal = 1e-10
 
 
 class Simple(object):
