@@ -5,7 +5,7 @@ class OptimTemplate(object):
     def __init__(self, obj, **kwargs):
         from numpy import array
         self.MaxIteration = 100
-        self.ErrorTolerance = 1e-10
+        self.ErrorTolerance = 1e-7
         self.STEP = 0
         self.Success = False
         self.Terminate = False
