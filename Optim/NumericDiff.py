@@ -1,13 +1,14 @@
 from __future__ import print_function
 from numpy import array
-Infinitesimal = 1e-10
+
+Infinitesimal = 1e-7
 
 
 class Simple(object):
     def __init__(self, **kwargs):
         pass
 
-    def diff(self, f, i=0):
+    def Diff(self, f, i=0):
         assert i >= 0, "The variable index must be a positive integer for differentiation"
 
         def df(x):
@@ -23,7 +24,7 @@ class Simple(object):
 
         return df
 
-    def gradient(self, f):
+    def Gradient(self, f):
 
         def gf(x):
             n = len(x)
@@ -37,6 +38,34 @@ class Simple(object):
             return array(gr)
 
         return gf
+
+    def Hessian(self, f):
+
+        def hsn(x):
+            n = len(x)
+            hs_mat = []
+            for i in range(n):
+                hs_row = []
+                for j in range(n):
+                    dx_pp = list(x)
+                    dx_mm = list(x)
+                    dx_pm = list(x)
+                    dx_mp = list(x)
+                    dx_pp[i] = dx_pp[i] + Infinitesimal
+                    dx_pp[j] = dx_pp[j] + Infinitesimal
+                    dx_pm[i] = dx_pm[i] + Infinitesimal
+                    dx_pm[j] = dx_pm[j] - Infinitesimal
+                    dx_mm[i] = dx_mm[i] - Infinitesimal
+                    dx_mm[j] = dx_mm[j] - Infinitesimal
+                    dx_mp[i] = dx_mp[i] - Infinitesimal
+                    dx_mp[j] = dx_mp[j] + Infinitesimal
+                    hs_row.append((f(dx_pp) - f(dx_mp) - f(dx_pm) + f(dx_mm)) / (4 * Infinitesimal ** 2))
+                hs_mat.append(array(hs_row))
+            return array(hs_mat)
+
+        return hsn
+
+
 """
 D = Simple()
 def f(x):
