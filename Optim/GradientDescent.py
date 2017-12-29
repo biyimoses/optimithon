@@ -83,7 +83,7 @@ class LineSearch(object):
         x = self.Ref.x[-1]
         t_x = x + alpha * p
         ft_x = self.Ref.objective(t_x)
-        while self.Goldstein(alpha, ft_x, t_x):
+        while self.Armijo(alpha, ft_x, t_x):
             alpha *= tau
             t_x = x + alpha * p
             ft_x = self.Ref.objective(t_x)
@@ -96,12 +96,45 @@ class LineSearch(object):
 class DescentDirection(object):
     def __init__(self, QNRef, **kwargs):
         self.Ref = QNRef
-        self.method = kwargs.pop('method', 'Gradient')
+        self.method = kwargs.pop('method', 'HestenesStiefel')
         self.Ref.MetaData['Descent Direction'] = self.method
 
     def Gradient(self):
         direction = -self.Ref.gradients[-1]
         # direction /= sqrt(dot(direction, direction))
+        self.Ref.directions.append(direction)
+        return direction
+
+    def FletcherReeves(self):
+        gr2 = self.Ref.gradients[-1]
+        gr1 = self.Ref.gradients[-2] if len(self.Ref.gradients)>1 else None
+        if gr1 is None:
+            direction = -gr2
+        else:
+            beta_fr = dot(gr2, gr2)/dot(gr1, gr1)
+            direction = -gr2 + beta_fr * self.Ref.directions[-1]
+        self.Ref.directions.append(direction)
+        return direction
+
+    def PolakRibiere(self):
+        gr2 = self.Ref.gradients[-1]
+        gr1 = self.Ref.gradients[-2] if len(self.Ref.gradients)>1 else None
+        if gr1 is None:
+            direction = -gr2
+        else:
+            beta_pr = dot(gr2, gr2-gr1)/dot(gr1, gr1)
+            direction = -gr2 + beta_pr * self.Ref.directions[-1]
+        self.Ref.directions.append(direction)
+        return direction
+
+    def HestenesStiefel(self):
+        gr2 = self.Ref.gradients[-1]
+        gr1 = self.Ref.gradients[-2] if len(self.Ref.gradients)>1 else None
+        if gr1 is None:
+            direction = -gr2
+        else:
+            beta_hs = dot(gr2, gr2-gr1)/dot(gr2 - gr1, self.Ref.directions[-1])
+            direction = -gr2 + beta_hs * self.Ref.directions[-1]
         self.Ref.directions.append(direction)
         return direction
 
@@ -205,17 +238,22 @@ import numdifftools as nd
 
 D = Simple()
 x0 = array((-1.3, .51, 1.5, .7, 0.))
-# x0 = array((1.3, 1.8))
+x0 = array((1.3, 1.8))
 # print(D.Hessian(f)(x0))
 # print(nd.Hessian(f)(x0))
 print(f(array([1.28041337, 2.15681331e+05])))
 # G = GDTpl(f, init=(1., 1.))
-OPTIM = Base(rosen, method=QuasiNewton, x0=x0, difftool=nd)
+OPTIM = Base(f, method=QuasiNewton, x0=x0, difftool=nd)
 # print(OPTIM.MaxIteration)
 OPTIM.Verbose = False
 OPTIM.MaxIteration = 500
 OPTIM()
 print(OPTIM.solution)
+scipymethods = ['Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG', 'L-BFGS-B', 'TNC', 'COBYLA', 'SLSQP', 'dogleg', 'trust-ncg']
 from scipy.optimize import minimize
-
-print(minimize(rosen, x0))
+for mtd in scipymethods:
+    try:
+        print("Method: %s"%mtd)
+        print(minimize(f, x0, method=mtd))
+    except:
+        pass
