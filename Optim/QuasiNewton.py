@@ -1,5 +1,18 @@
+r"""
+This module contains implementations of variations of unconstrained optimization methods known as Quasi-Newton methods.
+A Quasi-Newton method is an iterative algorithm that approximates a local minima of the objective function.
+Starting with a given initial point `x0`, each iteration consists of three major subprocedures:
+
+    + Finding a descent direction (via `DescentDirection` class)
+    + Finding the length of descent (using `LineSearch` class)
+    + Check the termination condition (`Termination` class).
+
+The right strategy to attempt an optimization problem must be pre-determined, otherwise, it uses a default set up to
+solve the problem.
+"""
+
 from __future__ import print_function
-from numpy import array, dot, sqrt
+from numpy import array, dot
 from base import OptimTemplate, Base
 from NumericDiff import Simple
 
@@ -7,9 +20,11 @@ from NumericDiff import Simple
 class LineSearch(object):
     def __init__(self, QNref, **kwargs):
         self.Ref = QNref
-        # self.method = kwargs.pop('method', 'BarzilaiBorwein')
-        self.method = kwargs.pop('method', 'Backtrack')
+        self.method = kwargs.pop('ls_method', 'Backtrack')
+        self.ls_bt_method = kwargs.pop('ls_bt_method', 'Armijo')
         self.Ref.MetaData['Step Size'] = self.method
+        if self.method == 'Backtrack':
+            self.Ref.MetaData['Backtrack Stop Criterion'] = self.ls_bt_method
         self.Arguments = kwargs
 
     def BarzilaiBorwein(self):
@@ -29,7 +44,6 @@ class LineSearch(object):
         else:
             dif_x = x2 - x1
             dif_g = gx2 - gx1
-            # lngth = sqrt(dot(gx2, gx2)) * dot(dif_x, dif_g) / dot(dif_g, dif_g)
             lngth = dot(dif_x, dif_g) / dot(dif_g, dif_g)
         return lngth
 
@@ -83,7 +97,7 @@ class LineSearch(object):
         x = self.Ref.x[-1]
         t_x = x + alpha * p
         ft_x = self.Ref.objective(t_x)
-        while self.Armijo(alpha, ft_x, t_x):
+        while self.__getattribute__(self.ls_bt_method)(alpha, ft_x, t_x):
             alpha *= tau
             t_x = x + alpha * p
             ft_x = self.Ref.objective(t_x)
@@ -96,44 +110,43 @@ class LineSearch(object):
 class DescentDirection(object):
     def __init__(self, QNRef, **kwargs):
         self.Ref = QNRef
-        self.method = kwargs.pop('method', 'HestenesStiefel')
+        self.method = kwargs.pop('dd_method', 'Gradient')
         self.Ref.MetaData['Descent Direction'] = self.method
 
     def Gradient(self):
         direction = -self.Ref.gradients[-1]
-        # direction /= sqrt(dot(direction, direction))
         self.Ref.directions.append(direction)
         return direction
 
     def FletcherReeves(self):
         gr2 = self.Ref.gradients[-1]
-        gr1 = self.Ref.gradients[-2] if len(self.Ref.gradients)>1 else None
+        gr1 = self.Ref.gradients[-2] if len(self.Ref.gradients) > 1 else None
         if gr1 is None:
             direction = -gr2
         else:
-            beta_fr = dot(gr2, gr2)/dot(gr1, gr1)
+            beta_fr = dot(gr2, gr2) / dot(gr1, gr1)
             direction = -gr2 + beta_fr * self.Ref.directions[-1]
         self.Ref.directions.append(direction)
         return direction
 
     def PolakRibiere(self):
         gr2 = self.Ref.gradients[-1]
-        gr1 = self.Ref.gradients[-2] if len(self.Ref.gradients)>1 else None
+        gr1 = self.Ref.gradients[-2] if len(self.Ref.gradients) > 1 else None
         if gr1 is None:
             direction = -gr2
         else:
-            beta_pr = dot(gr2, gr2-gr1)/dot(gr1, gr1)
+            beta_pr = dot(gr2, gr2 - gr1) / dot(gr1, gr1)
             direction = -gr2 + beta_pr * self.Ref.directions[-1]
         self.Ref.directions.append(direction)
         return direction
 
     def HestenesStiefel(self):
         gr2 = self.Ref.gradients[-1]
-        gr1 = self.Ref.gradients[-2] if len(self.Ref.gradients)>1 else None
+        gr1 = self.Ref.gradients[-2] if len(self.Ref.gradients) > 1 else None
         if gr1 is None:
             direction = -gr2
         else:
-            beta_hs = dot(gr2, gr2-gr1)/dot(gr2 - gr1, self.Ref.directions[-1])
+            beta_hs = dot(gr2, gr2 - gr1) / dot(gr2 - gr1, self.Ref.directions[-1])
             direction = -gr2 + beta_hs * self.Ref.directions[-1]
         self.Ref.directions.append(direction)
         return direction
@@ -145,14 +158,14 @@ class DescentDirection(object):
 class Termination(object):
     def __init__(self, QNRef, **kwargs):
         self.Ref = QNRef
-        self.method = kwargs.pop('method', 'Cauchy')
+        self.method = kwargs.pop('t_method', 'Cauchy')
         self.Ref.MetaData['Termination Criterion'] = self.method
 
     def Cauchy(self):
         progress = abs(self.Ref.obj_vals[-1] - self.Ref.obj_vals[-2])
         if progress <= self.Ref.ErrorTolerance:
             self.Ref.Success = True
-            self.Ref.termination_message = "Progress in objective values less than error tolerance (Cauchy condition)" % progress
+            self.Ref.termination_message = "Progress in objective values less than error tolerance (Cauchy condition)"
             return True
         return False
 
@@ -226,6 +239,11 @@ def jac(x):
                   -9 * x[1] ** 2 - 2 * sin(x[1]) * cos(x[1]) * x[1] ** 4 + 4 * cos(x[1]) ** 2 * x[1] ** 3])
 
 
+def g(x):
+    from math import cos
+    return sum([cos((j + 1) * x[0] + j) for j in range(1, 6)]) * sum([cos((j + 1) * x[1] + j) for j in range(1, 6)])
+
+
 NumVars = 5
 
 
@@ -239,21 +257,21 @@ import numdifftools as nd
 D = Simple()
 x0 = array((-1.3, .51, 1.5, .7, 0.))
 x0 = array((1.3, 1.8))
-# print(D.Hessian(f)(x0))
-# print(nd.Hessian(f)(x0))
-print(f(array([1.28041337, 2.15681331e+05])))
-# G = GDTpl(f, init=(1., 1.))
-OPTIM = Base(f, method=QuasiNewton, x0=x0, difftool=nd)
+x0 = array((-0., 0.))
+
+OPTIM = Base(g, method=QuasiNewton, x0=x0, jac=jac)  # , difftool=nd)
 # print(OPTIM.MaxIteration)
 OPTIM.Verbose = False
 OPTIM.MaxIteration = 500
 OPTIM()
 print(OPTIM.solution)
-scipymethods = ['Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG', 'L-BFGS-B', 'TNC', 'COBYLA', 'SLSQP', 'dogleg', 'trust-ncg']
+scipymethods = ['Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG', 'L-BFGS-B', 'TNC', 'COBYLA', 'SLSQP', 'dogleg',
+                'trust-ncg']
 from scipy.optimize import minimize
+
 for mtd in scipymethods:
     try:
-        print("Method: %s"%mtd)
-        print(minimize(f, x0, method=mtd))
+        print("Method: %s" % mtd)
+        print(minimize(g, x0, method=mtd))
     except:
         pass
