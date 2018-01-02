@@ -14,7 +14,6 @@ solve the problem.
 from __future__ import print_function
 from numpy import array, dot
 from base import OptimTemplate, Base
-from NumericDiff import Simple
 from excpt import *
 
 
@@ -27,7 +26,7 @@ class LineSearch(object):
         if self.method == 'Backtrack':
             self.Ref.MetaData['Backtrack Stop Criterion'] = self.ls_bt_method
         if self.method not in dir(self):
-            raise Undeclared("The method `%s` is not implemented for `LineSearch`"%self.method)
+            raise Undeclared("The method `%s` is not implemented for `LineSearch`" % self.method)
         if self.ls_bt_method not in dir(self):
             raise Undeclared("The method `%s` is not implemented for `LineSearch`" % self.ls_bt_method)
         self.Arguments = kwargs
@@ -117,7 +116,7 @@ class DescentDirection(object):
         self.Ref = QNRef
         self.method = kwargs.pop('dd_method', 'Gradient')
         if self.method not in dir(self):
-            raise Undeclared("The method `%s` is not implemented for `DescentDirection`"%self.method)
+            raise Undeclared("The method `%s` is not implemented for `DescentDirection`" % self.method)
         self.Ref.MetaData['Descent Direction'] = self.method
 
     def Gradient(self):
@@ -153,7 +152,15 @@ class DescentDirection(object):
         if gr1 is None:
             direction = -gr2
         else:
-            beta_hs = dot(gr2, gr2 - gr1) / dot(gr2 - gr1, self.Ref.directions[-1])
+            denum = dot(gr2 - gr1, self.Ref.directions[-1])
+            if denum == 0.:
+                raise Error(
+                    """
+                    Last descent direction is orthogonal to the difference of gradients of last two steps. 
+                    This causes a division by zero in `Hestenes-Stiefel`.
+                    One can avoid this by either slightly changing the initial point or choosing a different 
+                    descent direction strategy.""")
+            beta_hs = dot(gr2, gr2 - gr1) / denum
             direction = -gr2 + beta_hs * self.Ref.directions[-1]
         self.Ref.directions.append(direction)
         return direction
@@ -167,7 +174,7 @@ class Termination(object):
         self.Ref = QNRef
         self.method = kwargs.pop('t_method', 'Cauchy')
         if self.method not in dir(self):
-            raise Undeclared("The method `%s` is not implemented for `Termination`"%self.method)
+            raise Undeclared("The method `%s` is not implemented for `Termination`" % self.method)
         self.Ref.MetaData['Termination Criterion'] = self.method
 
     def Cauchy(self):
@@ -198,23 +205,21 @@ class Termination(object):
 
 
 class QuasiNewton(OptimTemplate):
+    """
+    This class hosts a family of first and second order iterative methods to solve an unconstrained optimization
+    problem. The general schema follows the following steps::
+
+        + Given a point :math:`x`, find a suitable descent direction :math:`p`.
+        + Find a suitable length :math:`\alpha` for the direction :math:`p` such that :math:`x+\alpha p` results in an appropriate decrease in values of the objective.
+        + Update :math:`x` to :math:`x+\alpha p` and repeat the above steps until a termination condition is satisfied.
+    """
+
     def __init__(self, obj, **kwargs):
         from types import FunctionType, LambdaType
         from collections import OrderedDict
         # check `obj` to be a function
         assert type(obj) in [FunctionType, LambdaType], "`obj` must be a function (the objective function)"
         super(QuasiNewton, self).__init__(obj, **kwargs)
-        self.x = [self.x0]
-        self.obj_vals = [self.objective(self.x0)]
-        # If the gradient is given
-        self.grd = kwargs.pop('jac', None)
-        # Else
-        if self.grd is None:
-            # If a method to find gradient is given
-            difftool = kwargs.pop('difftool', Simple())
-            self.grd = difftool.Gradient(self.objective)
-        self.gradients = []
-        self.directions = []
         self.MetaData = OrderedDict([('Family', "Quasi-Newton method")])
         # TBM
         self.LineSearch = LineSearch(self, **kwargs)
@@ -224,6 +229,11 @@ class QuasiNewton(OptimTemplate):
         self.custom_step_size = kwargs.pop('step_size', None)
 
     def iterate(self):
+        """
+        This method updates the `iterate` method of the `OptimTemplate` by customizing the descent direction method
+        as well as finding the descent step length. These method can be determined by the user.
+        :return: None
+        """
         x = self.x[-1]
         self.gradients.append(self.grd(x))
         ddirection = self.DescentDirection()
@@ -231,9 +241,12 @@ class QuasiNewton(OptimTemplate):
         n_x = x + step_size * ddirection
         self.x.append(n_x)
         self.obj_vals.append(self.objective(n_x))
-        self.STEP += 1
 
     def terminate(self):
+        """
+        This method updates the `terminate` method of the `OptimTemplate` which is given by user.
+        :return: Boolean
+        """
         return self.Termination()
 
 
@@ -262,19 +275,21 @@ def rosen(x):
 
 
 import numdifftools as nd
+from NumericDiff import Simple
 
 D = Simple()
 x0 = array((-1.3, .51, 1.5, .7, 0.))
 x0 = array((3., 4.5))
 #x0 = array((1., 1.))
-#x0 = array((-116.67964503, 1204.84914245))
+# x0 = array((-116.67964503, 1204.84914245))
 
 OPTIM = Base(g, method=QuasiNewton, x0=x0,
-             t_method='ZeroGradient',
-             dd_method='PolakRibiere', #''HestenesStiefel', #'PolakRibiere', #'FletcherReeves',#'Gradient'
+             t_method='Cauchy',  # 'Cauchy', #'ZeroGradient',
+             dd_method='Gradient',  # 'HestenesStiefel', #'PolakRibiere', #'FletcherReeves',#'Gradient'
              ls_method='Backtrack',
-             ls_bt_method='Armijo', #'Armijo', #Goldstein' 'Wolfe'
-             )  # , jac=jac)  # , difftool=nd)
+             ls_bt_method='Armijo',  # 'Armijo', 'Goldstein' 'Wolfe'
+             difftool=nd,
+             )  # , jac=jac)
 # print(OPTIM.MaxIteration)
 OPTIM.Verbose = False
 OPTIM.MaxIteration = 200

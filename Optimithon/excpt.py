@@ -3,9 +3,9 @@ This module provides descriptive exception for the other modules.
 """
 
 
-class OptimGenericError(Exception):
+class Error(Exception):
     def __init__(self, *args):
-        super(OptimGenericError, self).__init__(*args)
+        super(Error, self).__init__(*args)
 
 
 class DiffEror(Exception):

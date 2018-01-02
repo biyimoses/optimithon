@@ -1,4 +1,5 @@
 from __future__ import print_function
+from NumericDiff import Simple
 
 
 class OptimTemplate(object):
@@ -21,9 +22,20 @@ class OptimTemplate(object):
             self.x0 = array(kwargs['x0'])
         else:
             self.x0 = None
+        self.x = [self.x0]
+        self.obj_vals = [self.objective(self.x0)]
+        # If the gradient is given
+        self.grd = kwargs.pop('jac', None)
+        # Else
+        if self.grd is None:
+            # If a method to find gradient is given
+            difftool = kwargs.pop('difftool', Simple())
+            self.grd = difftool.Gradient(self.objective)
+        self.gradients = []
+        self.directions = []
 
     def iterate(self, **kwargs):
-        self.STEP += 1
+        pass
 
     def terminate(self, **kwargs):
         if self.STEP >= self.MaxIteration:
@@ -49,6 +61,7 @@ class Base(object):
         # Iterate:
         while not self.optimizer.terminate(**kwargs):
             self.optimizer.iterate(**kwargs)
+            self.optimizer.STEP += 1
             # Prompt the iteration message:
             if self.Verbose:
                 if self.optimizer.iteration_message is not None:
