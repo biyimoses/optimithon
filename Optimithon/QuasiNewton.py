@@ -15,6 +15,7 @@ from __future__ import print_function
 from numpy import array, dot
 from base import OptimTemplate, Base
 from NumericDiff import Simple
+from excpt import *
 
 
 class LineSearch(object):
@@ -25,6 +26,10 @@ class LineSearch(object):
         self.Ref.MetaData['Step Size'] = self.method
         if self.method == 'Backtrack':
             self.Ref.MetaData['Backtrack Stop Criterion'] = self.ls_bt_method
+        if self.method not in dir(self):
+            raise Undeclared("The method `%s` is not implemented for `LineSearch`"%self.method)
+        if self.ls_bt_method not in dir(self):
+            raise Undeclared("The method `%s` is not implemented for `LineSearch`" % self.ls_bt_method)
         self.Arguments = kwargs
 
     def BarzilaiBorwein(self):
@@ -111,6 +116,8 @@ class DescentDirection(object):
     def __init__(self, QNRef, **kwargs):
         self.Ref = QNRef
         self.method = kwargs.pop('dd_method', 'Gradient')
+        if self.method not in dir(self):
+            raise Undeclared("The method `%s` is not implemented for `DescentDirection`"%self.method)
         self.Ref.MetaData['Descent Direction'] = self.method
 
     def Gradient(self):
@@ -159,6 +166,8 @@ class Termination(object):
     def __init__(self, QNRef, **kwargs):
         self.Ref = QNRef
         self.method = kwargs.pop('t_method', 'Cauchy')
+        if self.method not in dir(self):
+            raise Undeclared("The method `%s` is not implemented for `Termination`"%self.method)
         self.Ref.MetaData['Termination Criterion'] = self.method
 
     def Cauchy(self):
@@ -256,13 +265,19 @@ import numdifftools as nd
 
 D = Simple()
 x0 = array((-1.3, .51, 1.5, .7, 0.))
-x0 = array((1.3, 1.8))
-x0 = array((-0., 0.))
+x0 = array((3., 4.5))
+#x0 = array((1., 1.))
+#x0 = array((-116.67964503, 1204.84914245))
 
-OPTIM = Base(g, method=QuasiNewton, x0=x0, jac=jac)  # , difftool=nd)
+OPTIM = Base(g, method=QuasiNewton, x0=x0,
+             t_method='ZeroGradient',
+             dd_method='PolakRibiere', #''HestenesStiefel', #'PolakRibiere', #'FletcherReeves',#'Gradient'
+             ls_method='Backtrack',
+             ls_bt_method='Armijo', #'Armijo', #Goldstein' 'Wolfe'
+             )  # , jac=jac)  # , difftool=nd)
 # print(OPTIM.MaxIteration)
 OPTIM.Verbose = False
-OPTIM.MaxIteration = 500
+OPTIM.MaxIteration = 200
 OPTIM()
 print(OPTIM.solution)
 scipymethods = ['Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG', 'L-BFGS-B', 'TNC', 'COBYLA', 'SLSQP', 'dogleg',
