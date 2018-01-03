@@ -205,9 +205,9 @@ class Termination(object):
 
 
 class QuasiNewton(OptimTemplate):
-    """
+    r"""
     This class hosts a family of first and second order iterative methods to solve an unconstrained optimization
-    problem. The general schema follows the following steps::
+    problem. The general schema follows the following steps:
 
         + Given a point :math:`x`, find a suitable descent direction :math:`p`.
         + Find a suitable length :math:`\alpha` for the direction :math:`p` such that :math:`x+\alpha p` results in an appropriate decrease in values of the objective.
@@ -249,7 +249,7 @@ class QuasiNewton(OptimTemplate):
         """
         return self.Termination()
 
-
+"""
 def f(x):
     from math import sin, cos
     return x[0] ** 2 - 3 * x[1] ** 3 + cos(x[1]) ** 2 * x[1] ** 4 - 10 * sin(x[0])
@@ -305,3 +305,4 @@ for mtd in scipymethods:
         print(minimize(g, x0, method=mtd))
     except:
         pass
+"""
