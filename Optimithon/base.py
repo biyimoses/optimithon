@@ -1,3 +1,8 @@
+r"""
+'base' Module
+========================
+"""
+
 from __future__ import print_function
 from NumericDiff import Simple
 
@@ -46,6 +51,31 @@ class OptimTemplate(object):
 
 
 class Base(object):
+    r"""
+    This is the base class that serves all the iterative optimization methods.
+    An object derived from `Base` requires the following parameters:
+
+    :param obj: *MANDATORY*- is a real valued function to be minimized.
+
+    :param x0: an initial guess of the optimal point.
+
+    :param method: the optimization class which implements `iterate` and `terminate` procedures (default: `OptimTemplate` that returns the value of the function at the initial point `x0`).
+
+    :param Verbose: *Boolean*- If `True` prompts messages at every stage of the iteration as well as termination.
+
+    The object then passes all other given parameters to the `method` class for further processes.
+    When a termination condition is satisfied, the object fills the results in the `solution` attribute which is an
+    instance of `Solution` class. The given class `method` can pass arbitrary pieces of information to the solution
+    by modifying its `MetaData` dictionary.
+
+    When an object `optim` of type `Base` initiated, the optimization process can be invoked by calling the object
+    itself like a function::
+
+        optim = Base(f, method=QuasiNewton, x0=init_point)
+        optim()
+        print(optim.solution)
+    """
+
     def __init__(self, obj, **kwargs):
         self.x0 = None
         self.objective = obj

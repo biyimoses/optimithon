@@ -1,4 +1,6 @@
 r"""
+'QuasiNewton' Module
+====================================================
 This module contains implementations of variations of unconstrained optimization methods known as Quasi-Newton methods.
 A Quasi-Newton method is an iterative algorithm that approximates a local minima of the objective function.
 Starting with a given initial point `x0`, each iteration consists of three major subprocedures:
@@ -212,6 +214,8 @@ class QuasiNewton(OptimTemplate):
         + Given a point :math:`x`, find a suitable descent direction :math:`p`.
         + Find a suitable length :math:`\alpha` for the direction :math:`p` such that :math:`x+\alpha p` results in an appropriate decrease in values of the objective.
         + Update :math:`x` to :math:`x+\alpha p` and repeat the above steps until a termination condition is satisfied.
+
+
     """
 
     def __init__(self, obj, **kwargs):
