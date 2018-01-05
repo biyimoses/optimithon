@@ -14,12 +14,25 @@ solve the problem.
 """
 
 from __future__ import print_function
-from numpy import array, dot
+from numpy import array, dot, outer
 from base import OptimTemplate, Base
 from excpt import *
 
 
 class LineSearch(object):
+    r"""
+    This class provides the step length at each iteration. The value of `ls_bt_method` at initiation determines whether
+    to use `'BarzilaiBorwein'` method or a variation of `'Backtrack'` (default). It accepts a control parameter `tau`
+    and `max_lngth` at initiation. `tau` must be a positive real less than 1.
+    The variation of the backtrack is then determined by the value of `ls_bt_method` which can be selected among
+    the following:
+
+        + 'Armijo': indicates *Armijo* condition and the parameter `c1` can be modified at initiation as well.
+        + 'Wolfe': indicates *Wolfe* condition and the parameters `c1` and `c2` can be modified at initiation.
+        + 'StrongWolfe': indicates *StrongWolfe* condition and the parameters `c1` and `c2` can be modified at initiation.
+        + 'Goldstein':  indicates *Goldstein* condition and the parameter `c1` can be modified at initiation.
+    """
+
     def __init__(self, QNref, **kwargs):
         self.Ref = QNref
         self.method = kwargs.pop('ls_method', 'Backtrack')
@@ -34,6 +47,11 @@ class LineSearch(object):
         self.Arguments = kwargs
 
     def BarzilaiBorwein(self):
+        """
+        Implementation of *Barzilai-Borwein*.
+
+        :return: step length
+        """
         x2 = self.Ref.x[-1]
         gx2 = self.Ref.gradients[-1]
         x1 = self.Ref.x[-2] if len(self.Ref.x) > 1 else None
@@ -54,6 +72,14 @@ class LineSearch(object):
         return lngth
 
     def Armijo(self, alpha, ft_x, tx):
+        r"""
+        Implementation of *Armijo*.
+
+        :param alpha: current candidate for step length
+        :param ft_x: value of the objective at the candidate point
+        :param tx: the candidate point
+        :return: `True` or `False`
+        """
         fx = self.Ref.obj_vals[-1]
         gr = self.Ref.gradients[-1]
         p = self.Ref.directions[-1]
@@ -63,6 +89,14 @@ class LineSearch(object):
         return ft_x > fx + alpha * c1 * dot(p, gr)
 
     def Wolfe(self, alpha, ft_x, tx):
+        r"""
+        Implementation of *Wolfe*.
+
+        :param alpha: current candidate for step length
+        :param ft_x: value of the objective at the candidate point
+        :param tx: the candidate point
+        :return: `True` or `False`
+        """
         fx = self.Ref.obj_vals[-1]
         gr = self.Ref.gradients[-1]
         p = self.Ref.directions[-1]
@@ -74,6 +108,14 @@ class LineSearch(object):
         return armijo or wolfe
 
     def StrongWolfe(self, alpha, ft_x, tx):
+        r"""
+        Implementation of *Strong Wolfe*.
+
+        :param alpha: current candidate for step length
+        :param ft_x: value of the objective at the candidate point
+        :param tx: the candidate point
+        :return: `True` or `False`
+        """
         fx = self.Ref.obj_vals[-1]
         gr = self.Ref.gradients[-1]
         p = self.Ref.directions[-1]
@@ -85,6 +127,14 @@ class LineSearch(object):
         return armijo or swolfe
 
     def Goldstein(self, alpha, ft_x, tx):
+        r"""
+        Implementation of *Goldstein*.
+
+        :param alpha: current candidate for step length
+        :param ft_x: value of the objective at the candidate point
+        :param tx: the candidate point
+        :return: `True` or `False`
+        """
         fx = self.Ref.obj_vals[-1]
         gr = self.Ref.gradients[-1]
         p = self.Ref.directions[-1]
@@ -95,6 +145,11 @@ class LineSearch(object):
         return g1 or g2
 
     def Backtrack(self):
+        r"""
+        A generic implementation of *Backtrack*.
+
+        :return: step length
+        """
         p = self.Ref.directions[-1]
         # TODO: make sure it is in the (0, 1) range
         tau = self.Arguments.pop('tau', 3. / 4.)
@@ -114,6 +169,19 @@ class LineSearch(object):
 
 
 class DescentDirection(object):
+    r"""
+    Implements various descent direction methods for Quasi-Newton methods. The descent method can be determined at
+    initiation using `dd_method` parameter. The following values are acceptable:
+
+        + 'Gradient': (default) The steepest descent direction.
+        + 'FletcherReeves': Fletcher-Reeves method.
+        + 'PolakRibiere': Polak-Ribiere method.
+        + 'HestenesStiefel': Hestenes-Stiefel method.
+
+    To calculate derivatives, the `QuasiNewton` class uses the object provided as the value of the `difftool` variable
+    at initiation.
+    """
+
     def __init__(self, QNRef, **kwargs):
         self.Ref = QNRef
         self.method = kwargs.pop('dd_method', 'Gradient')
@@ -122,11 +190,17 @@ class DescentDirection(object):
         self.Ref.MetaData['Descent Direction'] = self.method
 
     def Gradient(self):
+        r"""
+        :return: the gradient at current point
+        """
         direction = -self.Ref.gradients[-1]
         self.Ref.directions.append(direction)
         return direction
 
     def FletcherReeves(self):
+        r"""
+        :return: the descent direction determined by *Fletcher-Reeves* method
+        """
         gr2 = self.Ref.gradients[-1]
         gr1 = self.Ref.gradients[-2] if len(self.Ref.gradients) > 1 else None
         if gr1 is None:
@@ -138,6 +212,9 @@ class DescentDirection(object):
         return direction
 
     def PolakRibiere(self):
+        r"""
+        :return: the descent direction determined by *Polak-Ribiere* method
+        """
         gr2 = self.Ref.gradients[-1]
         gr1 = self.Ref.gradients[-2] if len(self.Ref.gradients) > 1 else None
         if gr1 is None:
@@ -149,6 +226,9 @@ class DescentDirection(object):
         return direction
 
     def HestenesStiefel(self):
+        r"""
+        :return: the descent direction determined by *Hestenes-Stiefel* method
+        """
         gr2 = self.Ref.gradients[-1]
         gr1 = self.Ref.gradients[-2] if len(self.Ref.gradients) > 1 else None
         if gr1 is None:
@@ -167,11 +247,47 @@ class DescentDirection(object):
         self.Ref.directions.append(direction)
         return direction
 
+    def DFP(self):
+        r"""
+        :return: the descent direction determined by *Davidon-Fletcher-Powell* formula
+        """
+        x2 = self.Ref.x[-1]
+        x1 = self.Ref.x[-2] if len(self.Ref.x) > 1 else None
+        gr2 = self.Ref.gradients[-1]
+        gr1 = self.Ref.gradients[-2] if len(self.Ref.gradients) > 1 else None
+        if x1 is None:
+            from numpy.linalg import inv
+            self.Ref.InvHsnAprx.append(inv(self.Ref.hes(x2)))
+            direction = - dot(self.Ref.InvHsnAprx[-1], gr2)
+        else:
+            sk = x2 - x1
+            yk = gr2 - gr1
+            rk = 1./dot(yk, sk)
+            Hk = self.Ref.InvHsnAprx[-1]
+            Hk1 = None
+
+    def BFGS(self):
+        r"""
+        :return: the descent direction determined by *Broyden-Fletcher-Goldfarb-Shanno* algorithm
+        """
+        pass
+
     def __call__(self, *args, **kwargs):
         return self.__getattribute__(self.method)()
 
 
 class Termination(object):
+    r"""
+    Implements various termination criteria for Quasi-Newton loop. A particular termination method can be selected
+    at initiation of the `Base` object by setting `t_method` with the name of the method as an string. The following
+    termination criteria are implemented:
+
+        + 'Cauchy': Checks of the changes in the values of the objective function are significant enough or not.
+        + 'ZeroGradient': Checks if the gradient of the objective is close to zero or not.
+
+    The value of the tolerated error is a property of `OptimTemplate` and hence can be modified as desired.
+    """
+
     def __init__(self, QNRef, **kwargs):
         self.Ref = QNRef
         self.method = kwargs.pop('t_method', 'Cauchy')
@@ -180,6 +296,11 @@ class Termination(object):
         self.Ref.MetaData['Termination Criterion'] = self.method
 
     def Cauchy(self):
+        r"""
+        Checks if the values of the objective function form a Cauchy sequence or not.
+
+        :return: `True` or `False`
+        """
         progress = abs(self.Ref.obj_vals[-1] - self.Ref.obj_vals[-2])
         if progress <= self.Ref.ErrorTolerance:
             self.Ref.Success = True
@@ -188,6 +309,11 @@ class Termination(object):
         return False
 
     def ZeroGradient(self):
+        r"""
+        Checks if the gradient vector is small enough or not.
+
+        :return:  `True` or `False`
+        """
         from numpy import absolute
         gr_mx = max(absolute(self.Ref.gradients[-1]))
         if gr_mx <= self.Ref.ErrorTolerance:
@@ -211,11 +337,21 @@ class QuasiNewton(OptimTemplate):
     This class hosts a family of first and second order iterative methods to solve an unconstrained optimization
     problem. The general schema follows the following steps:
 
-        + Given a point :math:`x`, find a suitable descent direction :math:`p`.
+        + Given the point :math:`x`, find a suitable descent direction :math:`p`.
         + Find a suitable length :math:`\alpha` for the direction :math:`p` such that :math:`x+\alpha p` results in an appropriate decrease in values of the objective.
         + Update :math:`x` to :math:`x+\alpha p` and repeat the above steps until a termination condition is satisfied.
 
-
+    The initial value for `x` can be set at initiation by passing `x0=init_point` to the `Base` instance.
+    There are various methods to determine the descent direction `p` at each step. The `DescentDirection` class
+    implements a variety of these methods. To choose one of these methods one should pass the method by its known name
+    at initiation simply by setting `dd_method='method name'`. This parameter will be passed to `DescentDirection`
+    class (see the documentation for `DescentDirection`). Also, to determine a suitable value for :math:`alpha` various
+    options are available the class `LineSearch` is responsible for handling the computation for :math:`alpha`.
+    The parameters `ls_method` and `ls_bt_method` can be set at initiation to determine the details for line search.
+    The termination condition also can vary and the desired condition can be determined by setting `t_method` at
+    initiation which will be passed to the `Termination` class.
+    Each of these classes may accept other parameters that can be set at initiation. To find out about those parameter
+    see the corresponding documentation.
     """
 
     def __init__(self, obj, **kwargs):
@@ -229,13 +365,13 @@ class QuasiNewton(OptimTemplate):
         self.LineSearch = LineSearch(self, **kwargs)
         self.DescentDirection = DescentDirection(self, **kwargs)
         self.Termination = Termination(self, **kwargs)
-        # self.step_sizes = []
         self.custom_step_size = kwargs.pop('step_size', None)
 
     def iterate(self):
         """
         This method updates the `iterate` method of the `OptimTemplate` by customizing the descent direction method
         as well as finding the descent step length. These method can be determined by the user.
+
         :return: None
         """
         x = self.x[-1]
@@ -249,9 +385,11 @@ class QuasiNewton(OptimTemplate):
     def terminate(self):
         """
         This method updates the `terminate` method of the `OptimTemplate` which is given by user.
-        :return: Boolean
+
+        :return:  `True` or `False`
         """
         return self.Termination()
+
 
 """
 def f(x):

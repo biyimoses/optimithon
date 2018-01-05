@@ -8,6 +8,14 @@ from NumericDiff import Simple
 
 
 class OptimTemplate(object):
+    r"""
+    Provides a template for an iterative optimization method.
+
+    :param obj: a real valued function (objective function)
+    :param x0: an initial guess for a (local) minimum
+    :param jac: a vector calculating the gradient of the objective function (optional, if not given will be numerically approximated)
+    :param difftool: an object to calculate `Gradient` and `Hessian` of the objective (optional, default `NumericDiff.Simple`)
+    """
     def __init__(self, obj, **kwargs):
         from numpy import array
         self.MaxIteration = 100
@@ -36,8 +44,16 @@ class OptimTemplate(object):
             # If a method to find gradient is given
             difftool = kwargs.pop('difftool', Simple())
             self.grd = difftool.Gradient(self.objective)
+        # If the Hessian is given
+        self.hes = kwargs.pop('hes', None)
+        # Else
+        if self.hes is None:
+            # If a method to find Hessian is given
+            difftool = kwargs.pop('difftool', Simple())
+            self.hes = difftool.Hessian(self.objective)
         self.gradients = []
         self.directions = []
+        self.InvHsnAprx = []
 
     def iterate(self, **kwargs):
         pass

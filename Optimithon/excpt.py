@@ -1,4 +1,6 @@
 """
+'excpt' Module
+=================
 This module provides descriptive exception for the other modules.
 """
 
