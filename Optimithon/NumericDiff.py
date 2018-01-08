@@ -86,6 +86,7 @@ class Simple(object):
         return hsn
 
 
+"""
 D = Simple()
 def f(x):
     return x[0]**2 - x[1]**3 +x[0]*x[1]**2
@@ -96,7 +97,7 @@ gf = D.Gradient(f)
 x1 = array((1 , 1.))
 x2 = array((2., 0.))
 print(df0(x1), df1(x1), gf(x1))
-from numpy import dot
+from numpy import dot, transpose
 x1 = array((1 , 1.))
-print(x1, dot(h(x1), x1))
-print(x1.transpose() - dot(x1.transpose(), h(x1)))
+print(dot(x1.reshape(2, 1), x1.reshape(1, 2)))
+"""

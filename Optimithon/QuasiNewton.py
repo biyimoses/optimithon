@@ -257,14 +257,23 @@ class DescentDirection(object):
         gr1 = self.Ref.gradients[-2] if len(self.Ref.gradients) > 1 else None
         if x1 is None:
             from numpy.linalg import inv
-            self.Ref.InvHsnAprx.append(inv(self.Ref.hes(x2)))
-            direction = - dot(self.Ref.InvHsnAprx[-1], gr2)
+            Hk = inv(self.Ref.hes(x2))
+            self.Ref.InvHsnAprx.append(Hk)
+            direction = - dot(Hk, gr2)
         else:
             sk = x2 - x1
+            n = sk.shape[0]
             yk = gr2 - gr1
-            rk = 1./dot(yk, sk)
+            rk = 1. / dot(yk, sk)
             Hk = self.Ref.InvHsnAprx[-1]
-            Hk1 = None
+            Hk1 = Hk - dot(dot(Hk, dot(yk.reshape(n, 1), yk.reshape(1, n))), Hk) / dot(yk.reshape(1, n),
+                                                                                       dot(Hk, yk.reshape(n, 1))) + dot(
+                sk.reshape(n, 1), sk.reshape(1, n)) * rk
+            self.Ref.InvHsnAprx.append(Hk1)
+            direction = - dot(Hk1, gr2)
+        self.Ref.directions.append(direction)
+        return direction
+
 
     def BFGS(self):
         r"""
@@ -378,6 +387,7 @@ class QuasiNewton(OptimTemplate):
         self.gradients.append(self.grd(x))
         ddirection = self.DescentDirection()
         step_size = self.LineSearch()
+        # print(step_size, ddirection)
         n_x = x + step_size * ddirection
         self.x.append(n_x)
         self.obj_vals.append(self.objective(n_x))
@@ -391,7 +401,7 @@ class QuasiNewton(OptimTemplate):
         return self.Termination()
 
 
-"""
+#"""
 def f(x):
     from math import sin, cos
     return x[0] ** 2 - 3 * x[1] ** 3 + cos(x[1]) ** 2 * x[1] ** 4 - 10 * sin(x[0])
@@ -427,9 +437,9 @@ x0 = array((3., 4.5))
 
 OPTIM = Base(g, method=QuasiNewton, x0=x0,
              t_method='Cauchy',  # 'Cauchy', #'ZeroGradient',
-             dd_method='Gradient',  # 'HestenesStiefel', #'PolakRibiere', #'FletcherReeves',#'Gradient'
-             ls_method='Backtrack',
-             ls_bt_method='Armijo',  # 'Armijo', 'Goldstein' 'Wolfe'
+             dd_method='DFP',  # 'HestenesStiefel', #'PolakRibiere', #'FletcherReeves',#'Gradient'
+             ls_method='BarzilaiBorwein', #''Backtrack',
+             ls_bt_method='Goldstein',  # 'Armijo', 'Goldstein' 'Wolfe'
              difftool=nd,
              )  # , jac=jac)
 # print(OPTIM.MaxIteration)
@@ -447,4 +457,4 @@ for mtd in scipymethods:
         print(minimize(g, x0, method=mtd))
     except:
         pass
-"""
+#"""
