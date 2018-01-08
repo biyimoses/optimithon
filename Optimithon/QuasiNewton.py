@@ -14,7 +14,7 @@ solve the problem.
 """
 
 from __future__ import print_function
-from numpy import array, dot, outer
+from numpy import array, dot, identity
 from base import OptimTemplate, Base
 from excpt import *
 
@@ -144,6 +144,11 @@ class LineSearch(object):
         g2 = ft_x > fx + c1 * alpha * dot(gr, p)
         return g1 or g2
 
+    def BinarySearch(self, alpha, ft_x, tx):
+        fx = self.Ref.obj_vals[-1]
+        bs = ft_x < fx
+        return bs
+
     def Backtrack(self):
         r"""
         A generic implementation of *Backtrack*.
@@ -177,6 +182,10 @@ class DescentDirection(object):
         + 'FletcherReeves': Fletcher-Reeves method.
         + 'PolakRibiere': Polak-Ribiere method.
         + 'HestenesStiefel': Hestenes-Stiefel method.
+        + 'DFP': Davidon-Fletcher-Powell formula.
+        + 'BFGS': Broyden-Fletcher-Goldfarb-Shanno algorithm.
+        + 'Broyden': Broyden's method.
+        + 'SR1': Symmetric rank-one method.
 
     To calculate derivatives, the `QuasiNewton` class uses the object provided as the value of the `difftool` variable
     at initiation.
@@ -274,12 +283,87 @@ class DescentDirection(object):
         self.Ref.directions.append(direction)
         return direction
 
-
     def BFGS(self):
         r"""
         :return: the descent direction determined by *Broyden-Fletcher-Goldfarb-Shanno* algorithm
         """
-        pass
+        x2 = self.Ref.x[-1]
+        x1 = self.Ref.x[-2] if len(self.Ref.x) > 1 else None
+        n = x2.shape[0]
+        gr2 = self.Ref.gradients[-1]
+        gr1 = self.Ref.gradients[-2] if len(self.Ref.gradients) > 1 else None
+        if x1 is None:
+            from numpy.linalg import inv
+            Hk = identity(n)
+            # Hk = inv(self.Ref.hes(x2))
+            self.Ref.InvHsnAprx.append(Hk)
+            direction = - dot(Hk, gr2)
+        else:
+            sk = x2 - x1
+            yk = gr2 - gr1
+            rk = 1. / dot(yk, sk)
+            Hk = self.Ref.InvHsnAprx[-1]
+            I = identity(n)
+            Hk1 = dot(dot(I - rk * dot(sk.reshape(n, 1), yk.reshape(1, n)), Hk),
+                      I - rk * dot(yk.reshape(n, 1), sk.reshape(1, n))) + rk * dot(sk.reshape(n, 1), sk.reshape(1, n))
+            self.Ref.InvHsnAprx.append(Hk1)
+            direction = - dot(Hk1, gr2)
+        self.Ref.directions.append(direction)
+        return direction
+
+    def Broyden(self):
+        r"""
+        :return: the descent direction determined by *Broyden's* method
+        """
+        x2 = self.Ref.x[-1]
+        x1 = self.Ref.x[-2] if len(self.Ref.x) > 1 else None
+        n = x2.shape[0]
+        gr2 = self.Ref.gradients[-1]
+        gr1 = self.Ref.gradients[-2] if len(self.Ref.gradients) > 1 else None
+        if x1 is None:
+            from numpy.linalg import inv
+            Hk = identity(n)
+            # Hk = inv(self.Ref.hes(x2))
+            self.Ref.InvHsnAprx.append(Hk)
+            direction = - dot(Hk, gr2)
+        else:
+            sk = x2 - x1
+            yk = gr2 - gr1
+            Hk = self.Ref.InvHsnAprx[-1]
+            Hk1 = Hk + dot((sk.reshape(n, 1) - dot(Hk, yk.reshape(n, 1))), dot(sk.reshape(1, n), Hk)) / dot(sk, dot(Hk,
+                                                                                                                    yk.reshape(
+                                                                                                                        n,
+                                                                                                                        1)))
+            self.Ref.InvHsnAprx.append(Hk1)
+            direction = - dot(Hk1, gr2)
+        self.Ref.directions.append(direction)
+        return direction
+
+    def SR1(self):
+        r"""
+        :return: the descent direction determined by *Symmetric rank-one* method
+        """
+        x2 = self.Ref.x[-1]
+        x1 = self.Ref.x[-2] if len(self.Ref.x) > 1 else None
+        n = x2.shape[0]
+        gr2 = self.Ref.gradients[-1]
+        gr1 = self.Ref.gradients[-2] if len(self.Ref.gradients) > 1 else None
+        if x1 is None:
+            from numpy.linalg import inv
+            Hk = identity(n)
+            #Hk = inv(self.Ref.hes(x2))
+            self.Ref.InvHsnAprx.append(Hk)
+            direction = - dot(Hk, gr2)
+        else:
+            sk = x2 - x1
+            yk = gr2 - gr1
+            Hk = self.Ref.InvHsnAprx[-1]
+            J = (sk.reshape(n, 1) - dot(Hk, yk.reshape(n, 1)))
+            Hk1 = Hk + dot(J, J.transpose()) / dot(yk.reshape(1, n), J)
+            self.Ref.InvHsnAprx.append(Hk1)
+            direction = - dot(Hk1, gr2)
+        self.Ref.directions.append(direction)
+        return direction
 
     def __call__(self, *args, **kwargs):
         return self.__getattribute__(self.method)()
@@ -314,6 +398,19 @@ class Termination(object):
         if progress <= self.Ref.ErrorTolerance:
             self.Ref.Success = True
             self.Ref.termination_message = "Progress in objective values less than error tolerance (Cauchy condition)"
+            return True
+        return False
+
+    def Cauchy_x(self):
+        r"""
+        Checks if the sequence of points form a Cauchy sequence or not.
+
+        :return: `True` or `False`
+        """
+        progress = max(abs(self.Ref.x[-1] - self.Ref.x[-2]))
+        if progress <= self.Ref.ErrorTolerance:
+            self.Ref.Success = True
+            self.Ref.termination_message = "The progress in values of points is less than error tolerance (%f)" % progress
             return True
         return False
 
@@ -431,20 +528,23 @@ from NumericDiff import Simple
 
 D = Simple()
 x0 = array((-1.3, .51, 1.5, .7, 0.))
-x0 = array((3., 4.5))
-#x0 = array((1., 1.))
-# x0 = array((-116.67964503, 1204.84914245))
+x0 = array((5.5, 7.1))
+x0 = array((1., 1.))
+#x0 = array((1.78204552, 5.0806408))
+x0 = array((-116.67964503, 1204.84914245))
+x0 = array((-3.46611487, 1302.19015757))
+print(f(x0))
 
-OPTIM = Base(g, method=QuasiNewton, x0=x0,
-             t_method='Cauchy',  # 'Cauchy', #'ZeroGradient',
-             dd_method='DFP',  # 'HestenesStiefel', #'PolakRibiere', #'FletcherReeves',#'Gradient'
-             ls_method='BarzilaiBorwein', #''Backtrack',
-             ls_bt_method='Goldstein',  # 'Armijo', 'Goldstein' 'Wolfe'
-             difftool=nd,
+OPTIM = Base(f, method=QuasiNewton, x0=x0,  # max_lngth=100.,
+             t_method='Cauchy',  # 'Cauchy', 'ZeroGradient',
+             dd_method='SR1',  # 'HestenesStiefel', 'PolakRibiere', 'FletcherReeves', 'Gradient', 'DFP', 'BFGS', 'Broyden'
+             ls_method='Backtrack',  # 'BarzilaiBorwein', 'Backtrack',
+             ls_bt_method='Wolfe',  # 'Armijo', 'Goldstein', 'Wolfe'
+             # difftool=nd,
              )  # , jac=jac)
 # print(OPTIM.MaxIteration)
 OPTIM.Verbose = False
-OPTIM.MaxIteration = 200
+OPTIM.MaxIteration = 1500
 OPTIM()
 print(OPTIM.solution)
 scipymethods = ['Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG', 'L-BFGS-B', 'TNC', 'COBYLA', 'SLSQP', 'dogleg',
@@ -454,7 +554,7 @@ from scipy.optimize import minimize
 for mtd in scipymethods:
     try:
         print("Method: %s" % mtd)
-        print(minimize(g, x0, method=mtd))
+        print(minimize(f, x0, method=mtd))
     except:
         pass
 #"""
