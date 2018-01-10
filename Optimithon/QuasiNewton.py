@@ -182,6 +182,7 @@ class DescentDirection(object):
         + 'FletcherReeves': Fletcher-Reeves method.
         + 'PolakRibiere': Polak-Ribiere method.
         + 'HestenesStiefel': Hestenes-Stiefel method.
+        + 'DaiYuan': Dai-Yuan method
         + 'DFP': Davidon-Fletcher-Powell formula.
         + 'BFGS': Broyden-Fletcher-Goldfarb-Shanno algorithm.
         + 'Broyden': Broyden's method.
@@ -253,6 +254,28 @@ class DescentDirection(object):
                     descent direction strategy.""")
             beta_hs = dot(gr2, gr2 - gr1) / denum
             direction = -gr2 + beta_hs * self.Ref.directions[-1]
+        self.Ref.directions.append(direction)
+        return direction
+
+    def DaiYuan(self):
+        r"""
+        :return: the descent direction determined by *Dai-Yuan* method
+        """
+        gr2 = self.Ref.gradients[-1]
+        gr1 = self.Ref.gradients[-2] if len(self.Ref.gradients) > 1 else None
+        if gr1 is None:
+            direction = -gr2
+        else:
+            denum = dot(gr2 - gr1, self.Ref.directions[-1])
+            if denum == 0.:
+                raise Error(
+                    """
+                    Last descent direction is orthogonal to the difference of gradients of last two steps. 
+                    This causes a division by zero in `Dai-Yuan`.
+                    One can avoid this by either slightly changing the initial point or choosing a different 
+                    descent direction strategy.""")
+            beta_dy = dot(gr2, gr2) / denum
+            direction = -gr2 + beta_dy * self.Ref.directions[-1]
         self.Ref.directions.append(direction)
         return direction
 
@@ -531,13 +554,13 @@ x0 = array((-1.3, .51, 1.5, .7, 0.))
 x0 = array((5.5, 7.1))
 x0 = array((1., 1.))
 #x0 = array((1.78204552, 5.0806408))
-x0 = array((-116.67964503, 1204.84914245))
-x0 = array((-3.46611487, 1302.19015757))
+#x0 = array((-116.67964503, 1204.84914245))
+#x0 = array((-3.46611487, 1302.19015757))
 print(f(x0))
 
 OPTIM = Base(f, method=QuasiNewton, x0=x0,  # max_lngth=100.,
              t_method='Cauchy',  # 'Cauchy', 'ZeroGradient',
-             dd_method='SR1',  # 'HestenesStiefel', 'PolakRibiere', 'FletcherReeves', 'Gradient', 'DFP', 'BFGS', 'Broyden'
+             dd_method='DaiYuan', # 'SR1', 'HestenesStiefel', 'PolakRibiere', 'FletcherReeves', 'Gradient', 'DFP', 'BFGS', 'Broyden', 'DaiYuan'
              ls_method='Backtrack',  # 'BarzilaiBorwein', 'Backtrack',
              ls_bt_method='Wolfe',  # 'Armijo', 'Goldstein', 'Wolfe'
              # difftool=nd,
