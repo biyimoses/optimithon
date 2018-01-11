@@ -179,6 +179,7 @@ class DescentDirection(object):
     initiation using `dd_method` parameter. The following values are acceptable:
 
         + 'Gradient': (default) The steepest descent direction.
+        + 'Newton': Newton Conjugate Gradient method.
         + 'FletcherReeves': Fletcher-Reeves method.
         + 'PolakRibiere': Polak-Ribiere method.
         + 'HestenesStiefel': Hestenes-Stiefel method.
@@ -204,6 +205,19 @@ class DescentDirection(object):
         :return: the gradient at current point
         """
         direction = -self.Ref.gradients[-1]
+        self.Ref.directions.append(direction)
+        return direction
+
+    def Newton(self):
+        r"""
+        :return: the descent direction determined by *Newton Conjugate Gradient* method
+        """
+        x = self.Ref.x[-1]
+        gr = self.Ref.gradients[-1]
+        from numpy.linalg import inv
+        Hk = inv(self.Ref.hes(x))
+        self.Ref.InvHsnAprx.append(Hk)
+        direction = - dot(Hk, gr)
         self.Ref.directions.append(direction)
         return direction
 
@@ -559,11 +573,11 @@ x0 = array((1., 1.))
 print(f(x0))
 
 OPTIM = Base(f, method=QuasiNewton, x0=x0,  # max_lngth=100.,
-             t_method='Cauchy',  # 'Cauchy', 'ZeroGradient',
-             dd_method='DaiYuan', # 'SR1', 'HestenesStiefel', 'PolakRibiere', 'FletcherReeves', 'Gradient', 'DFP', 'BFGS', 'Broyden', 'DaiYuan'
-             ls_method='Backtrack',  # 'BarzilaiBorwein', 'Backtrack',
-             ls_bt_method='Wolfe',  # 'Armijo', 'Goldstein', 'Wolfe'
-             # difftool=nd,
+             t_method='ZeroGradient',  # 'Cauchy', 'ZeroGradient',
+             dd_method='Newton', # 'SR1', 'HestenesStiefel', 'PolakRibiere', 'FletcherReeves', 'Gradient', 'DFP', 'BFGS', 'Broyden', 'DaiYuan'
+             ls_method='BarzilaiBorwein',  # 'BarzilaiBorwein', 'Backtrack',
+             ls_bt_method='BinarySearch',  # 'Armijo', 'Goldstein', 'Wolfe', 'BinarySearch'
+             difftool=nd,
              )  # , jac=jac)
 # print(OPTIM.MaxIteration)
 OPTIM.Verbose = False
