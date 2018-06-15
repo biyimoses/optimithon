@@ -25,6 +25,11 @@ class ValueRange(Exception):
         super(ValueRange, self).__init__(*args)
 
 
+class DirectionError(Exception):
+    def __init__(self, *args):
+        super(DirectionError, self).__init__(*args)
+
+
 class Undeclared(NotImplementedError):
     def __init__(self, *args):
         super(Undeclared, self).__init__(*args)

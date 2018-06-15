@@ -14,7 +14,7 @@ solve the problem.
 """
 
 from __future__ import print_function
-from numpy import array, dot, identity
+from numpy import array, dot, identity, log
 from base import OptimTemplate, Base
 from excpt import *
 
@@ -260,7 +260,7 @@ class DescentDirection(object):
         else:
             denum = dot(gr2 - gr1, self.Ref.directions[-1])
             if denum == 0.:
-                raise Error(
+                raise DirectionError(
                     """
                     Last descent direction is orthogonal to the difference of gradients of last two steps. 
                     This causes a division by zero in `Hestenes-Stiefel`.
@@ -282,7 +282,7 @@ class DescentDirection(object):
         else:
             denum = dot(gr2 - gr1, self.Ref.directions[-1])
             if denum == 0.:
-                raise Error(
+                raise DirectionError(
                     """
                     Last descent direction is orthogonal to the difference of gradients of last two steps. 
                     This causes a division by zero in `Dai-Yuan`.
@@ -388,7 +388,7 @@ class DescentDirection(object):
         if x1 is None:
             from numpy.linalg import inv
             Hk = identity(n)
-            #Hk = inv(self.Ref.hes(x2))
+            # Hk = inv(self.Ref.hes(x2))
             self.Ref.InvHsnAprx.append(Hk)
             direction = - dot(Hk, gr2)
         else:
@@ -535,7 +535,29 @@ class QuasiNewton(OptimTemplate):
         return self.Termination()
 
 
-#"""
+class Barrier(object):
+    def __init__(self, **kwargs):
+        self.method = kwargs.pop('br_func', 'Carrol')
+        self.penalty = kwargs.pop('penalty', 1.e1)
+
+    def Carrol(self):
+        return lambda t: -1. / (self.penalty * t)
+
+    def Logarithmic(self):
+        return lambda t: -log(t) / self.penalty
+
+    def __call__(self, *args, **kwargs):
+        return self.__getattribute__(self.method)()
+
+
+class BarrierQN():
+    def __init__(self, obj, **kwargs):
+        from types import FunctionType, LambdaType
+        # check `obj` to be a function
+        assert type(obj) in [FunctionType, LambdaType], "`obj` must be a function (the objective function)"
+        self.Barrier = Barrier(self, **kwargs)
+
+# """
 def f(x):
     from math import sin, cos
     return x[0] ** 2 - 3 * x[1] ** 3 + cos(x[1]) ** 2 * x[1] ** 4 - 10 * sin(x[0])
@@ -567,17 +589,19 @@ D = Simple()
 x0 = array((-1.3, .51, 1.5, .7, 0.))
 x0 = array((5.5, 7.1))
 x0 = array((1., 1.))
-#x0 = array((1.78204552, 5.0806408))
-#x0 = array((-116.67964503, 1204.84914245))
-#x0 = array((-3.46611487, 1302.19015757))
+x0 = array([1.78134001, 5.0836197])
+# x0 = array((1.78204552, 5.0806408))
+# x0 = array((-116.67964503, 1204.84914245))
+# x0 = array((-3.46611487, 1302.19015757))
 print(f(x0))
 
 OPTIM = Base(f, method=QuasiNewton, x0=x0,  # max_lngth=100.,
-             t_method='ZeroGradient',  # 'Cauchy', 'ZeroGradient',
-             dd_method='Newton', # 'SR1', 'HestenesStiefel', 'PolakRibiere', 'FletcherReeves', 'Gradient', 'DFP', 'BFGS', 'Broyden', 'DaiYuan'
+             t_method='Cauchy_x',  # 'Cauchy', 'ZeroGradient',
+             dd_method='Gradient',
+             # 'Newton', 'SR1', 'HestenesStiefel', 'PolakRibiere', 'FletcherReeves', 'Gradient', 'DFP', 'BFGS', 'Broyden', 'DaiYuan'
              ls_method='BarzilaiBorwein',  # 'BarzilaiBorwein', 'Backtrack',
              ls_bt_method='BinarySearch',  # 'Armijo', 'Goldstein', 'Wolfe', 'BinarySearch'
-             difftool=nd,
+             difftool=D,
              )  # , jac=jac)
 # print(OPTIM.MaxIteration)
 OPTIM.Verbose = False
@@ -594,4 +618,4 @@ for mtd in scipymethods:
         print(minimize(f, x0, method=mtd))
     except:
         pass
-#"""
+# """

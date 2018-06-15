@@ -16,6 +16,7 @@ class OptimTemplate(object):
     :param jac: a vector calculating the gradient of the objective function (optional, if not given will be numerically approximated)
     :param difftool: an object to calculate `Gradient` and `Hessian` of the objective (optional, default `NumericDiff.Simple`)
     """
+
     def __init__(self, obj, **kwargs):
         from numpy import array
         self.MaxIteration = 100
