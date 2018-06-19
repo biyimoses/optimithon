@@ -137,6 +137,9 @@ class Base(object):
 
 
 class Solution(object):
+    r"""
+    A class to keep outcome and details of the optimization run.
+    """
     def __init__(self):
         self.__dict__['objective'] = None
         self.__dict__['NumIteration'] = 0

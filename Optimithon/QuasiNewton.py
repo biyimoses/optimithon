@@ -476,6 +476,18 @@ class Termination(object):
 
 
 class Barrier(object):
+    r"""
+    Implementation of some barrier functions to be used for constrained optimization problems.
+    Three barrier functions are implemented:
+
+        + `Carrol`: is the standard barrier function defined by :math:`-\frac{1}{g_i(x)}`
+        + `Logarithmic`: is the standard barrier function defined by :math:`-\log(g_i(x))`
+        + `Expn`: is the standard barrier function defined by :math:`e^{-g_i(x)+\epsilon}`
+
+    The default barrier function is `Carrol` and the default penalty factor is 10^{-5}. To specify the barrier function
+    and penalty factor initiate the optimizer with keywords `br_func` that accepts one of the above three values and
+    `penalty` that must be a positive real number.
+    """
     def __init__(self, QNRef, **kwargs):
         self.Ref = QNRef
         self.method = kwargs.pop('br_func', 'Carrol')
@@ -558,6 +570,7 @@ class QuasiNewton(OptimTemplate):
         step_size = self.LineSearch()
         flag = True
         found_neg = False
+        # Check feasibility of candidate
         while flag:
             n_x = x + step_size * ddirection
             for f in self.ineqs:
