@@ -14,7 +14,7 @@ solve the problem.
 """
 
 from __future__ import print_function
-from numpy import array, dot, identity, log
+from numpy import array, dot, identity, log, exp
 from base import OptimTemplate, Base
 from excpt import *
 
@@ -85,7 +85,6 @@ class LineSearch(object):
         p = self.Ref.directions[-1]
         # TODO: make sure it is in the (0, 1) range
         c1 = self.Arguments.pop('c1', .0001)
-        # print(ft_x, fx + alpha * t)
         return ft_x > fx + alpha * c1 * dot(p, gr)
 
     def Wolfe(self, alpha, ft_x, tx):
@@ -215,7 +214,10 @@ class DescentDirection(object):
         x = self.Ref.x[-1]
         gr = self.Ref.gradients[-1]
         from numpy.linalg import inv
-        Hk = inv(self.Ref.hes(x))
+        try:
+            Hk = inv(self.Ref.hes(x))
+        except:
+            raise DirectionError("Singular matrix in the Newton search direction")
         self.Ref.InvHsnAprx.append(Hk)
         direction = - dot(Hk, gr)
         self.Ref.directions.append(direction)
@@ -367,10 +369,8 @@ class DescentDirection(object):
             sk = x2 - x1
             yk = gr2 - gr1
             Hk = self.Ref.InvHsnAprx[-1]
-            Hk1 = Hk + dot((sk.reshape(n, 1) - dot(Hk, yk.reshape(n, 1))), dot(sk.reshape(1, n), Hk)) / dot(sk, dot(Hk,
-                                                                                                                    yk.reshape(
-                                                                                                                        n,
-                                                                                                                        1)))
+            Hk1 = Hk + dot((sk.reshape(n, 1) - dot(Hk, yk.reshape(n, 1))),
+                           dot(sk.reshape(1, n), Hk)) / dot(sk, dot(Hk, yk.reshape(n, 1)))
             self.Ref.InvHsnAprx.append(Hk1)
             direction = - dot(Hk1, gr2)
         self.Ref.directions.append(direction)
@@ -475,6 +475,29 @@ class Termination(object):
             return self.__getattribute__(self.method)()
 
 
+class Barrier(object):
+    def __init__(self, QNRef, **kwargs):
+        self.Ref = QNRef
+        self.method = kwargs.pop('br_func', 'Carrol')
+        if self.method not in ['Carrol', 'Logarithmic', 'Expn']:
+            raise Undeclared("The barrier function '%s' is not implemented." % (self.method))
+        self.penalty = kwargs.pop('penalty', 1.e5)
+        self.Ref.MetaData['Barrier Function'] = self.method
+        self.Ref.MetaData['Penalty Factor'] = self.penalty
+
+    def Carrol(self):
+        return lambda t: (-1. / (self.penalty * t)) if abs(t) > 0 else self.penalty
+
+    def Logarithmic(self):
+        return lambda t: -log(t) / self.penalty
+
+    def Expn(self):
+        return lambda t: exp(-t + 1. / self.penalty) / self.penalty
+
+    def __call__(self, *args, **kwargs):
+        return self.__getattribute__(self.method)()
+
+
 class QuasiNewton(OptimTemplate):
     r"""
     This class hosts a family of first and second order iterative methods to solve an unconstrained optimization
@@ -509,6 +532,18 @@ class QuasiNewton(OptimTemplate):
         self.DescentDirection = DescentDirection(self, **kwargs)
         self.Termination = Termination(self, **kwargs)
         self.custom_step_size = kwargs.pop('step_size', None)
+        self.ineqs = kwargs.get('ineq', [])
+        self.Barrier = Barrier(self, **kwargs)
+        for f in self.ineqs:
+            assert type(f) in [FunctionType,
+                               LambdaType], """Constraints must be functions whose common non-negativity region is the 
+                               feasibility region of the problem"""
+        br = self.Barrier()
+        t_obj = lambda x: obj(x) + sum([br(fn(x)) for fn in self.ineqs])
+        self.objective = t_obj
+        self.obj_vals[0] = self.objective(self.x0)
+        self.org_obj_vals.append(self.org_objective(self.x0))
+        self.contract_factor = 0.9999
 
     def iterate(self):
         """
@@ -521,10 +556,25 @@ class QuasiNewton(OptimTemplate):
         self.gradients.append(self.grd(x))
         ddirection = self.DescentDirection()
         step_size = self.LineSearch()
-        # print(step_size, ddirection)
-        n_x = x + step_size * ddirection
+        flag = True
+        found_neg = False
+        while flag:
+            n_x = x + step_size * ddirection
+            for f in self.ineqs:
+                vl = f(n_x)
+                if vl <= 0.:
+                    found_neg = True
+                    break
+                else:
+                    found_neg = False
+            if found_neg:
+                step_size *= self.contract_factor
+                flag = True
+            else:
+                flag = False
         self.x.append(n_x)
         self.obj_vals.append(self.objective(n_x))
+        self.org_obj_vals.append(self.org_objective(n_x))
 
     def terminate(self):
         """
@@ -533,89 +583,3 @@ class QuasiNewton(OptimTemplate):
         :return:  `True` or `False`
         """
         return self.Termination()
-
-
-class Barrier(object):
-    def __init__(self, **kwargs):
-        self.method = kwargs.pop('br_func', 'Carrol')
-        self.penalty = kwargs.pop('penalty', 1.e1)
-
-    def Carrol(self):
-        return lambda t: -1. / (self.penalty * t)
-
-    def Logarithmic(self):
-        return lambda t: -log(t) / self.penalty
-
-    def __call__(self, *args, **kwargs):
-        return self.__getattribute__(self.method)()
-
-
-class BarrierQN():
-    def __init__(self, obj, **kwargs):
-        from types import FunctionType, LambdaType
-        # check `obj` to be a function
-        assert type(obj) in [FunctionType, LambdaType], "`obj` must be a function (the objective function)"
-        self.Barrier = Barrier(self, **kwargs)
-
-# """
-def f(x):
-    from math import sin, cos
-    return x[0] ** 2 - 3 * x[1] ** 3 + cos(x[1]) ** 2 * x[1] ** 4 - 10 * sin(x[0])
-
-
-def jac(x):
-    from math import sin, cos
-    return array([2 * x[0] - 10 * cos(x[0]),
-                  -9 * x[1] ** 2 - 2 * sin(x[1]) * cos(x[1]) * x[1] ** 4 + 4 * cos(x[1]) ** 2 * x[1] ** 3])
-
-
-def g(x):
-    from math import cos
-    return sum([cos((j + 1) * x[0] + j) for j in range(1, 6)]) * sum([cos((j + 1) * x[1] + j) for j in range(1, 6)])
-
-
-NumVars = 5
-
-
-def rosen(x):
-    return sum([100 * (x[i + 1] - x[i] ** 2) ** 2 + (1 - x[i]) ** 2 for i in range(NumVars - 1)])
-    # return (1 - x[0]) ** 2 + 105. * (x[1] - x[0] ** 2) ** 2
-
-
-import numdifftools as nd
-from NumericDiff import Simple
-
-D = Simple()
-x0 = array((-1.3, .51, 1.5, .7, 0.))
-x0 = array((5.5, 7.1))
-x0 = array((1., 1.))
-x0 = array([1.78134001, 5.0836197])
-# x0 = array((1.78204552, 5.0806408))
-# x0 = array((-116.67964503, 1204.84914245))
-# x0 = array((-3.46611487, 1302.19015757))
-print(f(x0))
-
-OPTIM = Base(f, method=QuasiNewton, x0=x0,  # max_lngth=100.,
-             t_method='Cauchy_x',  # 'Cauchy', 'ZeroGradient',
-             dd_method='Gradient',
-             # 'Newton', 'SR1', 'HestenesStiefel', 'PolakRibiere', 'FletcherReeves', 'Gradient', 'DFP', 'BFGS', 'Broyden', 'DaiYuan'
-             ls_method='BarzilaiBorwein',  # 'BarzilaiBorwein', 'Backtrack',
-             ls_bt_method='BinarySearch',  # 'Armijo', 'Goldstein', 'Wolfe', 'BinarySearch'
-             difftool=D,
-             )  # , jac=jac)
-# print(OPTIM.MaxIteration)
-OPTIM.Verbose = False
-OPTIM.MaxIteration = 1500
-OPTIM()
-print(OPTIM.solution)
-scipymethods = ['Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG', 'L-BFGS-B', 'TNC', 'COBYLA', 'SLSQP', 'dogleg',
-                'trust-ncg']
-from scipy.optimize import minimize
-
-for mtd in scipymethods:
-    try:
-        print("Method: %s" % mtd)
-        print(minimize(f, x0, method=mtd))
-    except:
-        pass
-# """

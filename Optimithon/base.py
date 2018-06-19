@@ -20,16 +20,16 @@ class OptimTemplate(object):
     def __init__(self, obj, **kwargs):
         from numpy import array
         self.MaxIteration = 100
-        self.ErrorTolerance = 1e-7
+        self.ErrorTolerance = 1e-10
         self.STEP = 0
         self.Success = False
         self.Terminate = False
-        self.objective = None
         self.constraints = None
         self.iteration_message = None
         self.termination_message = None
         self.objective = obj
-        self.solution = kwargs['solution']
+        self.org_objective = obj
+        self.solution = kwargs.pop('solution', Solution())
         if 'init' in kwargs:
             self.x0 = array(kwargs['init'])
         elif 'x0' in kwargs:
@@ -38,6 +38,7 @@ class OptimTemplate(object):
             self.x0 = None
         self.x = [self.x0]
         self.obj_vals = [self.objective(self.x0)]
+        self.org_obj_vals = []
         # If the gradient is given
         self.grd = kwargs.pop('jac', None)
         # Else
@@ -96,7 +97,7 @@ class Base(object):
     def __init__(self, obj, **kwargs):
         self.x0 = None
         self.objective = obj
-        self.constraints = []
+        self.ineqs = kwargs.get('ineq', [])
         self.Verbose = True
         self.solution = Solution()
         _optimizer = kwargs.pop('method', OptimTemplate)
@@ -121,7 +122,7 @@ class Base(object):
         self.solution = self.optimizer.solution
         self.solution.NumIteration = self.optimizer.STEP
         self.solution.x = self.optimizer.x[-1]
-        self.solution.objective = self.optimizer.obj_vals[-1]
+        self.solution.objective = self.optimizer.org_obj_vals[-1]
         self.solution.success = self.optimizer.Success
         self.solution.message = self.optimizer.termination_message
         self.solution.RunTime = elapsed
