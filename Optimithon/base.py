@@ -27,6 +27,7 @@ class OptimTemplate(object):
         self.constraints = None
         self.iteration_message = None
         self.termination_message = None
+        self.nfev = 0
         self.objective = obj
         self.org_objective = obj
         self.solution = kwargs.pop('solution', Solution())
@@ -38,6 +39,7 @@ class OptimTemplate(object):
             self.x0 = None
         self.x = [self.x0]
         self.obj_vals = [self.objective(self.x0)]
+        self.nfev += 1
         self.org_obj_vals = []
         # If the gradient is given
         self.grd = kwargs.pop('jac', None)
@@ -112,6 +114,7 @@ class Base(object):
             self.optimizer.STEP += 1
             # Prompt the iteration message:
             if self.Verbose:
+                print("Iteration # %d" % (self.optimizer.STEP))
                 if self.optimizer.iteration_message is not None:
                     print(self.optimizer.iteration_message)
         elapsed = (time() - start)
@@ -121,6 +124,7 @@ class Base(object):
                 print(self.optimizer.termination_message)
         self.solution = self.optimizer.solution
         self.solution.NumIteration = self.optimizer.STEP
+        self.solution.NumFuncEval = self.optimizer.nfev
         self.solution.x = self.optimizer.x[-1]
         self.solution.objective = self.optimizer.org_obj_vals[-1]
         self.solution.success = self.optimizer.Success
@@ -140,14 +144,16 @@ class Solution(object):
     r"""
     A class to keep outcome and details of the optimization run.
     """
+
     def __init__(self):
         self.__dict__['objective'] = None
         self.__dict__['NumIteration'] = 0
+        self.__dict__['NumFuncEval'] = 0
         self.__dict__['x'] = None
         self.__dict__['success'] = False
         self.__dict__['message'] = ""
         self.__dict__['RunTime'] = 0
-        self.__dict__['attributes'] = ['objective', 'x', 'NumIteration', 'success', 'message', 'RunTime']
+        self.__dict__['attributes'] = ['objective', 'x', 'NumIteration', 'NumFuncEval', 'success', 'message', 'RunTime']
 
     def __setattr__(self, key, value):
         if key not in self.__dict__['attributes']:

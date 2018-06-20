@@ -58,13 +58,32 @@ class LineSearch(object):
         gx1 = self.Ref.gradients[-2] if len(self.Ref.x) > 1 else None
         if x1 is None:
             fx = self.Ref.obj_vals[-1]
+            t_x = None
             lngth = 1.
-            t_x = x2 - lngth * gx2
+            # Check feasibility of candidate
+            flag = True
+            found_neg = False
+            while flag:
+                t_x = x2 - lngth * gx2
+                for f in self.Ref.ineqs:
+                    vl = f(t_x)
+                    if vl <= 0.:
+                        found_neg = True
+                        break
+                    else:
+                        found_neg = False
+                if found_neg:
+                    lngth *= self.Ref.contract_factor
+                    flag = True
+                else:
+                    flag = False
             ft_x = self.Ref.objective(t_x)
+            self.Ref.nfev += 1
             while ft_x > fx:
                 lngth /= 2.
                 t_x = x2 - lngth * gx2
                 ft_x = self.Ref.objective(t_x)
+                self.Ref.nfev += 1
         else:
             dif_x = x2 - x1
             dif_g = gx2 - gx1
@@ -160,12 +179,31 @@ class LineSearch(object):
         max_lngth = self.Arguments.pop('max_lngth', 1)
         alpha = max_lngth
         x = self.Ref.x[-1]
-        t_x = x + alpha * p
+        t_x = None
+        # Check feasibility of candidate
+        flag = True
+        found_neg = False
+        while flag:
+            t_x = x + alpha * p
+            for f in self.Ref.ineqs:
+                vl = f(t_x)
+                if vl <= 0.:
+                    found_neg = True
+                    break
+                else:
+                    found_neg = False
+            if found_neg:
+                alpha *= self.Ref.contract_factor
+                flag = True
+            else:
+                flag = False
         ft_x = self.Ref.objective(t_x)
+        self.Ref.nfev += 1
         while self.__getattribute__(self.ls_bt_method)(alpha, ft_x, t_x):
             alpha *= tau
             t_x = x + alpha * p
             ft_x = self.Ref.objective(t_x)
+            self.Ref.nfev += 1
         return alpha
 
     def __call__(self, *args, **kwargs):
@@ -305,7 +343,14 @@ class DescentDirection(object):
         gr1 = self.Ref.gradients[-2] if len(self.Ref.gradients) > 1 else None
         if x1 is None:
             from numpy.linalg import inv
-            Hk = inv(self.Ref.hes(x2))
+            try:
+                Hk = inv(self.Ref.hes(x2))
+            except:
+                raise DirectionError(
+                    """
+                    The `DFP` method encountered a singular Hessian matrix and can not progress further. 
+                    One can avoid this by either slightly changing the initial point or choosing a different 
+                    descent direction strategy.""")
             self.Ref.InvHsnAprx.append(Hk)
             direction = - dot(Hk, gr2)
         else:
@@ -313,7 +358,14 @@ class DescentDirection(object):
             n = sk.shape[0]
             yk = gr2 - gr1
             rk = 1. / dot(yk, sk)
-            Hk = self.Ref.InvHsnAprx[-1]
+            try:
+                Hk = self.Ref.InvHsnAprx[-1]
+            except:
+                raise DirectionError(
+                    """
+                    The `DFP` method encountered a singular Hessian matrix and can not progress further. 
+                    One can avoid this by either slightly changing the initial point or choosing a different 
+                    descent direction strategy.""")
             Hk1 = Hk - dot(dot(Hk, dot(yk.reshape(n, 1), yk.reshape(1, n))), Hk) / dot(yk.reshape(1, n),
                                                                                        dot(Hk, yk.reshape(n, 1))) + dot(
                 sk.reshape(n, 1), sk.reshape(1, n)) * rk
@@ -554,6 +606,7 @@ class QuasiNewton(OptimTemplate):
         t_obj = lambda x: obj(x) + sum([br(fn(x)) for fn in self.ineqs])
         self.objective = t_obj
         self.obj_vals[0] = self.objective(self.x0)
+        self.nfev += 1
         self.org_obj_vals.append(self.org_objective(self.x0))
         self.contract_factor = 0.9999
 
@@ -568,9 +621,10 @@ class QuasiNewton(OptimTemplate):
         self.gradients.append(self.grd(x))
         ddirection = self.DescentDirection()
         step_size = self.LineSearch()
+        # Check feasibility of candidate
         flag = True
         found_neg = False
-        # Check feasibility of candidate
+        n_x = None
         while flag:
             n_x = x + step_size * ddirection
             for f in self.ineqs:
@@ -587,6 +641,7 @@ class QuasiNewton(OptimTemplate):
                 flag = False
         self.x.append(n_x)
         self.obj_vals.append(self.objective(n_x))
+        self.nfev += 1
         self.org_obj_vals.append(self.org_objective(n_x))
 
     def terminate(self):
