@@ -24,7 +24,6 @@ class OptimTemplate(object):
         self.STEP = 0
         self.Success = False
         self.Terminate = False
-        self.constraints = None
         self.iteration_message = None
         self.termination_message = None
         self.nfev = 0
@@ -44,17 +43,16 @@ class OptimTemplate(object):
         # If the gradient is given
         self.grd = kwargs.pop('jac', None)
         # Else
+        self.difftool = kwargs.pop('difftool', Simple())
         if self.grd is None:
             # If a method to find gradient is given
-            difftool = kwargs.pop('difftool', Simple())
-            self.grd = difftool.Gradient(self.objective)
+            self.grd = self.difftool.Gradient(self.objective)
         # If the Hessian is given
         self.hes = kwargs.pop('hes', None)
         # Else
         if self.hes is None:
             # If a method to find Hessian is given
-            difftool = kwargs.pop('difftool', Simple())
-            self.hes = difftool.Hessian(self.objective)
+            self.hes = self.difftool.Hessian(self.objective)
         self.gradients = []
         self.directions = []
         self.InvHsnAprx = []

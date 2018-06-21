@@ -7,7 +7,7 @@ Description = "A pure python implementation of various standard optimization met
 
 setup(
     name='Optimithon',
-    version='0.1.8',
+    version='0.2.0',
     author='Mehdi Ghasemi',
     author_email='mehdi.ghasemi@gmail.com',
     packages=['Optimithon'],

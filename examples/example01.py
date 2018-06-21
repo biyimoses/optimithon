@@ -1,8 +1,8 @@
-from numpy import array
+from numpy import array, sqrt
 import numdifftools as nd
-from Optimithon.base import Base
-from Optimithon.NumericDiff import Simple
-from Optimithon.QuasiNewton import QuasiNewton
+from Optimithon import Base
+from Optimithon import Simple
+from Optimithon import QuasiNewton
 from scipy.optimize import minimize
 
 
@@ -18,14 +18,16 @@ def jac(x):
 
 
 D = Simple()
-x0 = array((3.2, 3.5))
+x0 = array((2.5, 3.7))
 
 f1 = lambda x: x[1] - 3.
 f2 = lambda x: 4. - x[1]
-f3 = lambda x: x[0] - 2.
+f3 = lambda x: x[0] - 1.9
 f4 = lambda x: 4. - x[0]
+feq = lambda x: x[1] - 3.5
 OPTIM = Base(f, ineq=[f1, f2, f3, f4],
-             br_func='Expn',
+             eq=[feq],
+             br_func='Carrol',
              penalty=1.e6,
              method=QuasiNewton, x0=x0,  # max_lngth=100.,
              t_method='Cauchy',  # 'Cauchy_x', 'ZeroGradient',
@@ -33,17 +35,21 @@ OPTIM = Base(f, ineq=[f1, f2, f3, f4],
              # 'Newton', 'SR1', 'HestenesStiefel', 'PolakRibiere', 'FletcherReeves', 'Gradient', 'DFP', 'BFGS', 'Broyden', 'DaiYuan'
              ls_method='Backtrack',  # 'BarzilaiBorwein', 'Backtrack',
              ls_bt_method='Armijo',  # 'Armijo', 'Goldstein', 'Wolfe', 'BinarySearch'
-             difftool=nd,
-             jac=jac
+             difftool=D,
+             # jac=jac
              )
 OPTIM.Verbose = False
 OPTIM.MaxIteration = 1500
 OPTIM()
 print(OPTIM.solution)
+print(OPTIM.optimizer.x)
 
 scipymethods = ['COBYLA', 'SLSQP']
 cns = (
-    {'type': 'ineq', 'fun': f1}, {'type': 'ineq', 'fun': f2}, {'type': 'ineq', 'fun': f3}, {'type': 'ineq', 'fun': f4})
+    {'type': 'ineq', 'fun': f1}, {'type': 'ineq', 'fun': f2},
+    {'type': 'ineq', 'fun': f3},
+    {'type': 'ineq', 'fun': f4}, {'type': 'eq', 'fun': feq}
+)
 for mtd in scipymethods:
     try:
         print("Method: %s" % mtd)

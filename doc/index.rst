@@ -7,7 +7,7 @@ Welcome to Optimithon's documentation!
 ========================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Contents:
 
    iterative

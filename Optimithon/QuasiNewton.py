@@ -540,6 +540,7 @@ class Barrier(object):
     and penalty factor initiate the optimizer with keywords `br_func` that accepts one of the above three values and
     `penalty` that must be a positive real number.
     """
+
     def __init__(self, QNRef, **kwargs):
         self.Ref = QNRef
         self.method = kwargs.pop('br_func', 'Carrol')
@@ -550,13 +551,16 @@ class Barrier(object):
         self.Ref.MetaData['Penalty Factor'] = self.penalty
 
     def Carrol(self):
-        return lambda t: (-1. / (self.penalty * t)) if abs(t) > 0 else self.penalty
+        return lambda t: (1. / (self.penalty * t)) if abs(t) > 0 else self.penalty
 
     def Logarithmic(self):
         return lambda t: -log(t) / self.penalty
 
     def Expn(self):
         return lambda t: exp(-t + 1. / self.penalty) / self.penalty
+
+    def Courant(self):
+        return lambda t: self.penalty * t ** 2
 
     def __call__(self, *args, **kwargs):
         return self.__getattribute__(self.method)()
@@ -597,14 +601,26 @@ class QuasiNewton(OptimTemplate):
         self.Termination = Termination(self, **kwargs)
         self.custom_step_size = kwargs.pop('step_size', None)
         self.ineqs = kwargs.get('ineq', [])
+        self.eqs = kwargs.get('eq', [])
         self.Barrier = Barrier(self, **kwargs)
         for f in self.ineqs:
             assert type(f) in [FunctionType,
-                               LambdaType], """Constraints must be functions whose common non-negativity region is the 
+                               LambdaType], """Inequality constraints must be functions whose common non-negativity 
+                               region is the feasibility region of the problem"""
+        for f in self.eqs:
+            assert type(f) in [FunctionType,
+                               LambdaType], """Equality constraints must be functions whose common zero set is the 
                                feasibility region of the problem"""
-        br = self.Barrier()
-        t_obj = lambda x: obj(x) + sum([br(fn(x)) for fn in self.ineqs])
+        ineq_br = self.Barrier()
+        eq_br = self.Barrier.Courant()
+        self.eq_barrier = lambda x: 0.
+        if self.eqs != []:
+            self.eq_barrier = lambda x: sum([eq_br(f_(x)) for f_ in self.eqs])
+        t_obj = lambda x: obj(x) + sum([ineq_br(fn(x)) for fn in self.ineqs]) + sum([eq_br(f_(x)) for f_ in self.eqs])
         self.objective = t_obj
+        if self.eqs != [] or self.ineqs != []:
+            self.grd = self.difftool.Gradient(self.objective)
+            self.hes = self.difftool.Hessian(self.objective)
         self.obj_vals[0] = self.objective(self.x0)
         self.nfev += 1
         self.org_obj_vals.append(self.org_objective(self.x0))

@@ -9,7 +9,7 @@ def g(x):
 
 
 x0 = array((3., 4.5))
-OPTIM = base.Base(g, method=QuasiNewton.QuasiNewton, x0=x0,
+OPTIM = base.Base(g, method=QuasiNewton, x0=x0,
                   t_method='Cauchy_x',  # 'ZeroGradient',
                   dd_method='SR1',  # 'Gradient', 'SR1'
                   ls_method='Backtrack',
