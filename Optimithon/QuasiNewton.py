@@ -536,6 +536,9 @@ class Barrier(object):
         + `Logarithmic`: is the standard barrier function defined by :math:`-\log(g_i(x))`
         + `Expn`: is the standard barrier function defined by :math:`e^{-g_i(x)+\epsilon}`
 
+    The only barrier function implemented for the equality is the typical function known as `Courant` function
+    which is simply :math:`h_j^2(x)`.
+
     The default barrier function is `Carrol` and the default penalty factor is 10^{-5}. To specify the barrier function
     and penalty factor initiate the optimizer with keywords `br_func` that accepts one of the above three values and
     `penalty` that must be a positive real number.

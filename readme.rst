@@ -1,6 +1,6 @@
 This code aims to provide flexible and extendable implementation of various standard and experimental optimization
 methods. The development is gradual and priority will be given to those methods that seem to be more exciting to
-implement (based on my personal interests).
+implement (based on personal interests).
 
 This project was mainly motivated by my lake of knowledge in numerical optimization, otherwise there are excellent
 (open source) tools for almost every task that a machine can do. This occurred while I was working on an other

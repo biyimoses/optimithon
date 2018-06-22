@@ -13,6 +13,8 @@ Infinitesimal = 1e-7
 class Simple(object):
     r"""
     A simple class to calculate partial derivatives of a given function.
+    Passing a value for `Infinitesimal` forces the calculations to be done according to the infinitesimal value
+    provided by user. Otherwise, the default value (1.e-7) is used.
     """
 
     def __init__(self, **kwargs):

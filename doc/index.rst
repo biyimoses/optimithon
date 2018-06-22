@@ -11,6 +11,8 @@ Welcome to Optimithon's documentation!
    :caption: Contents:
 
    iterative
+   derivative
+   constrained
    code
 
 Indices and tables
