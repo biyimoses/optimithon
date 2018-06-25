@@ -1,6 +1,7 @@
-r"""
+"""
 'base' Module
 ========================
+This module implements general containers for typical optimization methods.
 """
 
 from __future__ import print_function

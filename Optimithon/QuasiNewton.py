@@ -1,4 +1,4 @@
-r"""
+"""
 'QuasiNewton' Module
 ====================================================
 This module contains implementations of variations of unconstrained optimization methods known as Quasi-Newton methods.
