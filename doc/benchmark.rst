@@ -4,7 +4,7 @@ Benchmark Problems
 We employ the `QuasiNewton` class to solve a few benchmark optimization problems.
 These benchmarks that are mainly taken from [MJXY]_.
 
-.. [MJXY] M\. Jamil, Xin-She Yang, *A literature survey of benchmark functions for global optimization problems*, IJMMNO, Vol. 4(2), 2013.
+.. [MJXY] M\. Jamil, Xin-She Yang, *A literature survey of benchmark functions for global optimization problems*, IJMMNO, Vol. 4(2) (2013).
 
 Rosenbrock Function
 ==================================

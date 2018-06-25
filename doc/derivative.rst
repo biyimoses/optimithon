@@ -6,7 +6,7 @@ and/or hessian of the objective function.
 
 For more details on the methods introduced in this chapter refer to [JNSJW]_.
 
-.. [JNSJW] J\. Nocedal, S. J. Wright, *Numerical Optimization*, Second Ed., Springer, New York, NY, USA, 2006.
+.. [JNSJW] J\. Nocedal, S. J. Wright, *Numerical Optimization*, 2nd  ed., Springer, New York, NY, USA (2006).
 
 ---------------------------------------------------
 Descent Direction
@@ -19,7 +19,7 @@ This method chooses the backward gradient direction to achieve the direction whi
 values of the objective function:
 
 .. math::
-    p_n=\nabla f(x_n)
+    p_n=-\nabla f(x_n)
 
 Newton Conjugate Gradient method
 ---------------------------------------------------
@@ -32,31 +32,39 @@ where :math:`\nabla^2f(x_n)` is the Hessian of :math:`f` at :math:`x_n`.
 
 Fletcher-Reeves method
 ---------------------------------------------------
-The direction suggested by R. Fletcher and C. M. Reeves in 1964. Let :math:`p_0=-\nabla f(x_0)` and
+The direction suggested by R. Fletcher and C. M. Reeves in 1964 [RFCMR]_. Let :math:`p_0=-\nabla f(x_0)` and
 
 .. math::
     p_n=\frac{\nabla f(x_n)^T\nabla f(x_n)}{\|\nabla f(x_{n-1})\|^2}p_{n-1}-\nabla f(x_n).
 
+.. [RFCMR] R\. Fletcher and C. M. Reeves, *Function minimization by conjugate gradients*, Comput. J. 7 (1964), 149–154.
+
 Polak–Ribiere method
 ---------------------------------------------------
-Suggested by E. Polak and G. Ribiere in 1969. Let :math:`p_0=-\nabla f(x_0)` and
+Suggested by E. Polak and G. Ribiere in 1969 [EPGR]_. Let :math:`p_0=-\nabla f(x_0)` and
 
 .. math::
     p_n=\frac{\nabla f(x_n)^T(\nabla f(x_n)-\nabla f(x_{n-1}))}{\|\nabla f(x_{n-1})\|^2}p_{n-1}-\nabla f(x_n).
 
+.. [EPGR] E\. Polak and G. Ribiere, *Note sur la convergence de directions conjuguee*, Rev. Francaise Informat Recherche Operationelle, 3e Annee 16 (1969), 35–43.
+
 Hestenes-Stiefel method
 ---------------------------------------------------
-Suggested by M. R. Hestenes and E. Stiefel in 1953. Let :math:`p_0=-\nabla f(x_0)` and
+Suggested by M. R. Hestenes and E. Stiefel in 1953 [MRHES]_. Let :math:`p_0=-\nabla f(x_0)` and
 
 .. math::
     p_n=\frac{\nabla f(x_n)^T(\nabla f(x_n)-\nabla f(x_{n-1}))}{(\nabla f(x_n)-\nabla f(x_{n-1}))^Tp_{n-1}}p_{n-1}-\nabla f(x_n).
 
+.. [MRHES] M\. R. Hestenes and E. Stiefel, *Methods of conjugate gradients for solving linear systems*, J. Research Nat. Bur. Standards 49 (1952), 409–436 (1953).
+
 Dai-Yuan method
 ---------------------------------------------------
-Suggested by Y.-H. Dai and Y. Yuan in 1999. Let :math:`p_0=-\nabla f(x_0)` and
+Suggested by Y.-H. Dai and Y. Yuan in 1999 [YHDYY]_. Let :math:`p_0=-\nabla f(x_0)` and
 
 .. math::
     p_n=\frac{\|\nabla f(x_n)\|^2}{(\nabla f(x_n)-\nabla f(x_{n-1}))p_{n-1}}p_{n-1}-\nabla f(x_n).
+
+.. [YHDYY] Y\.-H. Dai and Y. Yuan, *A nonlinear conjugate gradient method with a strong global convergence property*, SIAM J. Optim. 10 (1999), no. 1, 177–182.
 
 Davidon-Fletcher-Powell method
 ---------------------------------------------------
@@ -69,7 +77,10 @@ Let :math:`H_0=\nabla^2f(x_0)^{-1}` and
     \nabla f(x_{n-1}))^TH_{n-1}(\nabla f(x_n)-\nabla f(x_{n-1}))},
     \end{array}
 
-then :math:`p_n=-H_n\nabla f(x_n)`.
+then :math:`p_n=-H_n\nabla f(x_n)` (see [WCD]_ and [RF]_).
+
+.. [WCD] W\. C. Davidon, *Variable metric method for minimization*, SIAM Journal on Optimization, 1: 1–17 (1991).
+.. [RF] R\. Fletcher, *Practical methods of optimization* (2nd ed.), New York: John Wiley & Sons (1987).
 
 Broyden-Fletcher-Goldfarb-Shanno method
 ---------------------------------------------------
