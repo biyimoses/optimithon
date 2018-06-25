@@ -571,6 +571,18 @@ class Barrier(object):
 
 class QuasiNewton(OptimTemplate):
     r"""
+
+    :param obj: the objective function
+    :param ineq: *(optional)* list of inequality constraints, default: `[]`
+    :param eq: *(optional)* list of equality constraints, default: `[]`
+    :param ls_method: *(optional)* the line search strategy, default: `Backtrack`
+    :param ls_bt_method: *(optional)* the backtrack termination condition, default: `Armijo`
+    :param dd_method: *(optional)* the descent direction method, default: `Gradient`
+    :param t_method: *(optional)* termination condition, default: `Cauchy`
+    :param br_func: *(optional)* barrier function family, default: `Carrol`
+    :param penalty: *(optional)* penalty factor for the barrier function, default: `1.e5`
+    :param max_iter: *(optional)* maximum number of iterations, default: `100`
+
     This class hosts a family of first and second order iterative methods to solve an unconstrained optimization
     problem. The general schema follows the following steps:
 

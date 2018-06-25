@@ -19,7 +19,7 @@ class OptimTemplate(object):
 
     def __init__(self, obj, **kwargs):
         from numpy import array
-        self.MaxIteration = 100
+        self.MaxIteration = kwargs.get('max_iter', 100)
         self.ErrorTolerance = 1e-10
         self.STEP = 0
         self.Success = False
@@ -73,13 +73,15 @@ class Base(object):
     This is the base class that serves all the iterative optimization methods.
     An object derived from `Base` requires the following parameters:
 
-    :param obj: *MANDATORY*- is a real valued function to be minimized.
+    :param obj: *MANDATORY*- is a real valued function to be minimized
 
-    :param x0: an initial guess of the optimal point.
+    :param x0: an initial guess of the optimal point
 
-    :param method: the optimization class which implements `iterate` and `terminate` procedures (default: `OptimTemplate` that returns the value of the function at the initial point `x0`).
+    :param method: the optimization class which implements `iterate` and `terminate` procedures (default: `OptimTemplate` that returns the value of the function at the initial point `x0`)
 
-    :param Verbose: *Boolean*- If `True` prompts messages at every stage of the iteration as well as termination.
+    :param Verbose: *Boolean*- If `True` prompts messages at every stage of the iteration as well as termination
+
+    :param kwargs: the rest of parameters that will ba passed to `method`
 
     The object then passes all other given parameters to the `method` class for further processes.
     When a termination condition is satisfied, the object fills the results in the `solution` attribute which is an
@@ -98,6 +100,7 @@ class Base(object):
         self.x0 = None
         self.objective = obj
         self.ineqs = kwargs.get('ineq', [])
+        self.eqs = kwargs.get('eq', [])
         self.Verbose = True
         self.solution = Solution()
         _optimizer = kwargs.pop('method', OptimTemplate)

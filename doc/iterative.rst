@@ -22,6 +22,22 @@ This package attempts to implement various methods to solve the unconstrained op
 Then by employing the barrier functions method, the resulted code for unconstrained problem is modified to solve the
 general form of :eq:`CnsOptim`.
 
+The user interface for both unconstrained and constrained optimization problems is the same, but some parameters are
+ignored for unconstrained problems. A minimal code to solve :eq:`CnsOptim` would look like the following::
+
+    from Optimithon import Base, QuasiNewton # import the essentials
+    f = # definition of the objective function
+    ineqs = [g_i for i in range(m)] # the list of inequality constraints: g_i >= 0.
+    eqs = [h_j for j in range(k)] # the list of equality constraints: h_j == 0.
+    OPTIM = Base(f, # the objective function (mandatory)
+             ineq=ineqs, # inequality constraints
+             eq = eqs, # equality constraints
+             x0=x0, # an initial point, a numpy array
+             )
+    OPTIM() # run the optimization procedure
+    print(OPTIM.solution) # show the outcome
+
+
 ===================================================
 Iterative Optimization Methods
 ===================================================
