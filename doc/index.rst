@@ -13,6 +13,7 @@ Welcome to Optimithon's documentation!
    iterative
    derivative
    constrained
+   benchmark
    code
 
 Indices and tables

@@ -16,5 +16,5 @@ setup(
     description=Description,
     long_description=open('readme.rst').read(),
     keywords=["Numerical", "Optimization"],
-    install_requires=['numpy']
+    install_requires=['numpy', 'numdifftools']
 )
