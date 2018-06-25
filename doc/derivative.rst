@@ -6,7 +6,7 @@ and/or hessian of the objective function.
 
 For more details on the methods introduced in this chapter refer to [JNSJW]_.
 
-.. [JNSJW] J. Nocedal, S. J. Wright, *Numerical Optimization*, Second Ed., Springer, New York, NY, USA, 2006.
+.. [JNSJW] J\. Nocedal, S. J. Wright, *Numerical Optimization*, Second Ed., Springer, New York, NY, USA, 2006.
 
 ---------------------------------------------------
 Descent Direction
