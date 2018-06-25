@@ -34,3 +34,7 @@ The following options for the barrier function are implemented:
         - `Expn`: is the standard barrier function defined by :math:`e^{-g_i(x)+\epsilon}`
     + For the equality condition:
         - `Courant`: function which is simply defined by :math:`h_j^2(x)`.
+
+.. note::
+
+    The value of :math:`\epsilon` in the code is taken to be equal to :math:`\epsilon=\frac{1}{\sigma_n}`.

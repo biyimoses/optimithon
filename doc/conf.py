@@ -51,8 +51,10 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Optimithon'
-copyright = u'2017, Mehdi Ghasemi'
-author = u'Mehdi Ghasemi'
+#copyright = u'2018, Mehdi Ghasemi'
+copyright = u'2018, REBE, Government of Saskatchewan'
+# author = u'Mehdi Ghasemi'
+author = u'REBE, Government of Saskatchewan'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
