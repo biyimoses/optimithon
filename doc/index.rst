@@ -10,6 +10,7 @@ Welcome to Optimithon's documentation!
    :maxdepth: 3
    :caption: Contents:
 
+   intro
    iterative
    derivative
    constrained

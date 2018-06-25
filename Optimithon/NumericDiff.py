@@ -5,7 +5,6 @@ This module provides very basic way to numerically approximate partial derivativ
 """
 
 from __future__ import print_function
-from numpy import array
 
 Infinitesimal = 1e-7
 
@@ -27,6 +26,7 @@ class Simple(object):
         :return: partial derivative of :math:`f` with respect to :math:'i^{th}` variable as a function.
         """
         assert i >= 0, "The variable index must be a positive integer for differentiation"
+        from numpy import array
 
         def df(x):
             if i < len(x):
@@ -45,6 +45,7 @@ class Simple(object):
         :param f: a real valued function
         :return: a vector function that returns the gradient vector of `f` at each point.
         """
+        from numpy import array
 
         def gf(x):
             n = len(x)
@@ -64,7 +65,7 @@ class Simple(object):
         :param f: a real valued function
         :return: the Hessian matrix of :math:`f` at each point
         """
-
+        from numpy import array
         def hsn(x):
             n = len(x)
             hs_mat = []

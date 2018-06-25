@@ -14,8 +14,7 @@ solve the problem.
 """
 
 from __future__ import print_function
-from numpy import array, dot, identity, log, exp
-from base import OptimTemplate, Base
+from base import OptimTemplate
 from excpt import *
 
 
@@ -52,6 +51,7 @@ class LineSearch(object):
 
         :return: step length
         """
+        from numpy import dot
         x2 = self.Ref.x[-1]
         gx2 = self.Ref.gradients[-1]
         x1 = self.Ref.x[-2] if len(self.Ref.x) > 1 else None
@@ -99,6 +99,7 @@ class LineSearch(object):
         :param tx: the candidate point
         :return: `True` or `False`
         """
+        from numpy import dot
         fx = self.Ref.obj_vals[-1]
         gr = self.Ref.gradients[-1]
         p = self.Ref.directions[-1]
@@ -115,6 +116,7 @@ class LineSearch(object):
         :param tx: the candidate point
         :return: `True` or `False`
         """
+        from numpy import dot
         fx = self.Ref.obj_vals[-1]
         gr = self.Ref.gradients[-1]
         p = self.Ref.directions[-1]
@@ -134,6 +136,7 @@ class LineSearch(object):
         :param tx: the candidate point
         :return: `True` or `False`
         """
+        from numpy import dot
         fx = self.Ref.obj_vals[-1]
         gr = self.Ref.gradients[-1]
         p = self.Ref.directions[-1]
@@ -153,6 +156,7 @@ class LineSearch(object):
         :param tx: the candidate point
         :return: `True` or `False`
         """
+        from numpy import dot
         fx = self.Ref.obj_vals[-1]
         gr = self.Ref.gradients[-1]
         p = self.Ref.directions[-1]
@@ -249,6 +253,7 @@ class DescentDirection(object):
         r"""
         :return: the descent direction determined by *Newton Conjugate Gradient* method
         """
+        from numpy import dot
         x = self.Ref.x[-1]
         gr = self.Ref.gradients[-1]
         from numpy.linalg import inv
@@ -265,6 +270,7 @@ class DescentDirection(object):
         r"""
         :return: the descent direction determined by *Fletcher-Reeves* method
         """
+        from numpy import dot
         gr2 = self.Ref.gradients[-1]
         gr1 = self.Ref.gradients[-2] if len(self.Ref.gradients) > 1 else None
         if gr1 is None:
@@ -279,6 +285,7 @@ class DescentDirection(object):
         r"""
         :return: the descent direction determined by *Polak-Ribiere* method
         """
+        from numpy import dot
         gr2 = self.Ref.gradients[-1]
         gr1 = self.Ref.gradients[-2] if len(self.Ref.gradients) > 1 else None
         if gr1 is None:
@@ -293,6 +300,7 @@ class DescentDirection(object):
         r"""
         :return: the descent direction determined by *Hestenes-Stiefel* method
         """
+        from numpy import dot
         gr2 = self.Ref.gradients[-1]
         gr1 = self.Ref.gradients[-2] if len(self.Ref.gradients) > 1 else None
         if gr1 is None:
@@ -315,6 +323,7 @@ class DescentDirection(object):
         r"""
         :return: the descent direction determined by *Dai-Yuan* method
         """
+        from numpy import dot
         gr2 = self.Ref.gradients[-1]
         gr1 = self.Ref.gradients[-2] if len(self.Ref.gradients) > 1 else None
         if gr1 is None:
@@ -337,6 +346,7 @@ class DescentDirection(object):
         r"""
         :return: the descent direction determined by *Davidon-Fletcher-Powell* formula
         """
+        from numpy import dot
         x2 = self.Ref.x[-1]
         x1 = self.Ref.x[-2] if len(self.Ref.x) > 1 else None
         gr2 = self.Ref.gradients[-1]
@@ -378,6 +388,7 @@ class DescentDirection(object):
         r"""
         :return: the descent direction determined by *Broyden-Fletcher-Goldfarb-Shanno* algorithm
         """
+        from numpy import dot, identity
         x2 = self.Ref.x[-1]
         x1 = self.Ref.x[-2] if len(self.Ref.x) > 1 else None
         n = x2.shape[0]
@@ -406,6 +417,7 @@ class DescentDirection(object):
         r"""
         :return: the descent direction determined by *Broyden's* method
         """
+        from numpy import dot, identity
         x2 = self.Ref.x[-1]
         x1 = self.Ref.x[-2] if len(self.Ref.x) > 1 else None
         n = x2.shape[0]
@@ -432,6 +444,7 @@ class DescentDirection(object):
         r"""
         :return: the descent direction determined by *Symmetric rank-one* method
         """
+        from numpy import dot, identity
         x2 = self.Ref.x[-1]
         x1 = self.Ref.x[-2] if len(self.Ref.x) > 1 else None
         n = x2.shape[0]
@@ -557,9 +570,11 @@ class Barrier(object):
         return lambda t: (1. / (self.penalty * t)) if abs(t) > 0 else self.penalty
 
     def Logarithmic(self):
+        from numpy import log
         return lambda t: -log(t) / self.penalty
 
     def Expn(self):
+        from numpy import exp
         return lambda t: exp(-t + 1. / self.penalty) / self.penalty
 
     def Courant(self):
