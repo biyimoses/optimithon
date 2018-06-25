@@ -19,6 +19,7 @@ Documentation
 ==============================
 The documentation is produced by `Sphinx <http://www.sphinx-doc.org/en/stable/>`_ and is intended to cover code usage
 as well as a bit of theory to explain each method briefly.
+For more details refer to the `documentation <http://optimithon.readthedocs.io/>`_.
 
 License
 =============================
