@@ -94,7 +94,7 @@ Let :math:`H_0=\nabla^2f(x_0)^{-1}` and
      & + & \frac{(x_n - x_{n-1})(x_n - x_{n-1})^T}{(\nabla f(x_n)-\nabla f(x_{n-1}))^T(x_n - x_{n-1})},
     \end{array}
 
-then :math:`p_n=-H_n\nabla f(x_n)`.
+then :math:`p_n=-H_n\nabla f(x_n)` (see [RF]_).
 
 Broyden’s method
 ---------------------------------------------------
@@ -107,7 +107,9 @@ Let :math:`H_0=\nabla^2f(x_0)^{-1}` and
     {(x_n- x_{n-1})^TH_{n-1}(\nabla f(x_n)-\nabla f(x_{n-1}))},
     \end{array}
 
-then :math:`p_n=-H_n\nabla f(x_n)`.
+then :math:`p_n=-H_n\nabla f(x_n)` (see [CGB]_).
+
+.. [CGB] C\. G. Broyden, *A Class of Methods for Solving Nonlinear Simultaneous Equations*. Math. of Comput. AMS. 19 (92): 577–593 (1965).
 
 Symmetric Rank-One (SR1) method
 ---------------------------------------------------
@@ -120,7 +122,9 @@ Let :math:`H_0=\nabla^2f(x_0)^{-1}` and
      {((x_n- x_{n-1})-H_{n-1}(\nabla f(x_n)-\nabla f(x_{n-1}))^T(\nabla f(x_n)-\nabla f(x_{n-1}))},
     \end{array}
 
-then :math:`p_n=-H_n\nabla f(x_n)`.
+then :math:`p_n=-H_n\nabla f(x_n)` (see [RHB]_).
+
+.. [RHB] R\. H. Byrd *Analysis of a Symmetric Rank-One Trust Region Method*, SIAM J. Optim 6(4) (1996).
 
 ---------------------------------------------------
 Line Search methods
@@ -131,15 +135,18 @@ The following is the list of line search methods implemented.
 
 Barzilai-Borwein method
 ---------------------------------------------------
-The length of the descent direction suggested by Barzilai-Borwein method is calculated with the following formula:
+The length of the descent direction suggested by Barzilai-Borwein method [JBJMB]_ is calculated with the following
+formula:
 
 .. math::
     \alpha=\frac{(x_n- x_{n-1})(\nabla f(x_n)-\nabla f(x_{n-1}))^T}{\|\nabla f(x_n)-\nabla f(x_{n-1})\|^2}.
 
+.. [JBJMB] J\. Barzilai, J. M. Borwein. *Two-point step size gradient methods*, IMA J. Numerical Analysis, 8(1):141–148 (1988).
+
 Backtrack line search method
 ---------------------------------------------------
 Backtrack line search is a generic algorithm relying in various conditions to approximate a suitable magnitude for the
-descent direction.
+descent direction [JNSJW]_.
 
 Starting with a maximum candidate step size value :math:`\alpha_0>0`, using search control parameters
 :math:`\tau\in(0,1)` and :math:`c\in(0,1)`, the backtracking line search algorithm can be expressed as follows:
