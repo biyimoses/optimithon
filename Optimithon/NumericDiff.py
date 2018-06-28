@@ -29,7 +29,11 @@ class Simple(object):
         from numpy import array
 
         def df(x):
-            if i < len(x):
+            try:
+                n = len(x)
+            except:
+                n = 1
+            if i < n:
                 dx_p = list(x)
                 dx_m = list(x)
                 dx_p[i] = x[i] + self.Infinitesimal
@@ -48,7 +52,10 @@ class Simple(object):
         from numpy import array
 
         def gf(x):
-            n = len(x)
+            try:
+                n = len(x)
+            except:
+                n = 1
             gr = []
             for i in range(n):
                 dx_p = list(x)
@@ -67,7 +74,10 @@ class Simple(object):
         """
         from numpy import array
         def hsn(x):
-            n = len(x)
+            try:
+                n = len(x)
+            except:
+                n = 1
             hs_mat = []
             for i in range(n):
                 hs_row = []
