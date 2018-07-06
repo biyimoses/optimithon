@@ -117,6 +117,8 @@ class Base(object):
             # Prompt the iteration message:
             if self.Verbose:
                 print("Iteration # %d" % (self.optimizer.STEP))
+                print("Current candidate: ", self.optimizer.x[-1])
+                print("Value of the objective: ", self.optimizer.org_obj_vals[-1])
                 if self.optimizer.iteration_message is not None:
                     print(self.optimizer.iteration_message)
         elapsed = (time() - start)
